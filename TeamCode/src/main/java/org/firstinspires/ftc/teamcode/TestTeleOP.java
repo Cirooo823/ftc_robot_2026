@@ -12,7 +12,7 @@ public class TestTeleOP extends OpMode {
     public DcMotorEx right_f;
     public DcMotorEx left_b;
 
-    public double drivePowerScale;
+    public double drivePowerScale=1;
 
     @Override
     public void init() {
@@ -20,6 +20,8 @@ public class TestTeleOP extends OpMode {
         right_f = hardwareMap.get(DcMotorEx.class, "rightFront");
         left_b = hardwareMap.get(DcMotorEx.class, "leftBack");
         right_b = hardwareMap.get(DcMotorEx.class, "rightBack");
+
+        left_f.setDirection((DcMotorEx.Direction.REVERSE));
     }
 
     @Override
@@ -34,7 +36,7 @@ public class TestTeleOP extends OpMode {
 
     @Override
     public void loop() {
-        double x = -gamepad1.right_stick_x;
+        double x = -gamepad1.right_stick_x; //flipped the sign to reverse strafing (undid it again after advik changed wheels)
         double y = -gamepad1.left_stick_y;
         double rx = -gamepad1.left_stick_x;
         double denominator = Math.max(Math.abs(y) + Math.abs(x) + Math.abs(rx), 1);
