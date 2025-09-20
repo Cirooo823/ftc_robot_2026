@@ -1,14 +1,16 @@
 package org.firstinspires.ftc.teamcode;
 
 import android.util.Size;
-
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
+import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.GainControl;
 import org.firstinspires.ftc.vision.VisionPortal;
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @TeleOp(name = "Test Vision Preview", group = "Vision")
 public class TestVision extends LinearOpMode {
@@ -19,7 +21,6 @@ public class TestVision extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
 
-        // 1) create the AprilTag processor with overlays enabled
         tagProcessor = new AprilTagProcessor.Builder()
                 .setDrawAxes(true)
                 .setDrawCubeProjection(true)
@@ -27,10 +28,7 @@ public class TestVision extends LinearOpMode {
                 .setDrawTagOutline(true)
                 .build();
 
-        // 2) get the webcam from the hardware map, ensure name matches your config
         WebcamName webcam = hardwareMap.get(WebcamName.class, "Webcam 1");
-
-        // 3) build the VisionPortal, enable the camera monitor view so the Driver Hub shows the live feed
         int cameraMonitorViewId = hardwareMap.appContext.getResources().getIdentifier(
                 "cameraMonitorViewId", "id", hardwareMap.appContext.getPackageName());
 
@@ -38,20 +36,38 @@ public class TestVision extends LinearOpMode {
                 .addProcessor(tagProcessor)
                 .setCamera(webcam)
                 .setCameraResolution(new Size(640, 480))
-                .setLiveViewContainerId(cameraMonitorViewId) // The correct method to show the preview on the Driver Hub
+                .setLiveViewContainerId(cameraMonitorViewId)
                 .build();
+
+        // -------------------------------------------------------------
+        // Accessing the Camera Controls
+        // -------------------------------------------------------------
+
+        // Wait for the camera to start streaming before accessing controls.
+        while (visionPortal.getCameraState() != VisionPortal.CameraState.STREAMING) {
+            sleep(20);
+        }
+
+        ExposureControl exposureControl = (ExposureControl) visionPortal.getCameraControl(ExposureControl.class);
+        if (exposureControl.isExposureSupported()) {
+            exposureControl.setMode(ExposureControl.Mode.Manual);
+            exposureControl.setExposure(1, TimeUnit.MILLISECONDS); //Change exposure
+        }
+
+        GainControl gainControl = (GainControl) visionPortal.getCameraControl(GainControl.class);
+        gainControl.setGain(45); //Change gain
+
+        // ---
 
         telemetry.addLine("VisionPortal ready, preview should appear on Driver Hub");
         telemetry.update();
 
         waitForStart();
 
-        // 4) main loop: display tag pose telemetry while the preview runs
         while (opModeIsActive() && !isStopRequested()) {
-
-            if (tagProcessor.getDetections().size() > 0) {
-                AprilTagDetection tag = tagProcessor.getDetections().get(0);
-
+            List<AprilTagDetection> detections = tagProcessor.getDetections();
+            if (!detections.isEmpty()) {
+                AprilTagDetection tag = detections.get(0);
                 telemetry.addData("tag id", tag.id);
                 telemetry.addData("x", tag.ftcPose.x);
                 telemetry.addData("y", tag.ftcPose.y);
@@ -62,7 +78,6 @@ public class TestVision extends LinearOpMode {
             } else {
                 telemetry.addLine("No tags detected");
             }
-
             telemetry.update();
             sleep(50);
         }

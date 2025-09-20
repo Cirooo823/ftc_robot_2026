@@ -14,7 +14,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(); //write the robot's mass in the parenthesis
+            .mass(4); //write the robot's mass in the parenthesis //Temporary number to ignore errors
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
 
