@@ -124,6 +124,7 @@ public class Tuning extends SelectableOpMode {
  * @author Baron Henderson - 20077 The Indubitables
  * @version 1.0, 5/6/2024
  */
+
 class LocalizationTest extends OpMode {
     @Override
     public void init() {}
@@ -1231,14 +1232,20 @@ class Drawing {
             return;
         }
 
+        // THIS WAS ADDED FOT THE PANELS TO DRAW IT WELL
+        double displayX = pose.getY();          // display X = actual Y
+        double displayY = pose.getX();          // display Y = actual X
+        double displayHeading = -pose.getHeading(); // flip heading if arrow points backwards
+
+
         panelsField.setStyle(style);
-        panelsField.moveCursor(pose.getX(), pose.getY());
+        panelsField.moveCursor(displayX, displayY); //was originally (pose.getX(), pose.getY()
         panelsField.circle(ROBOT_RADIUS);
 
-        Vector v = pose.getHeadingAsUnitVector();
+        Vector v = pose.getHeadingAsUnitVector(); //was originally =pose.getHeadingAsUnitVector()
         v.setMagnitude(v.getMagnitude() * ROBOT_RADIUS);
-        double x1 = pose.getX() + v.getXComponent() / 2, y1 = pose.getY() + v.getYComponent() / 2;
-        double x2 = pose.getX() + v.getXComponent(), y2 = pose.getY() + v.getYComponent();
+        double x1 = displayX + v.getXComponent() / 2, y1 = displayY + v.getYComponent() / 2;
+        double x2 = displayX + v.getXComponent(), y2 = displayY + v.getYComponent();
 
         panelsField.setStyle(style);
         panelsField.moveCursor(x1, y1);
