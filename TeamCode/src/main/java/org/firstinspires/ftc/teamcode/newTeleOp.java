@@ -23,6 +23,9 @@ public class newTeleOp extends OpMode {
         left_b  = hardwareMap.get(DcMotorEx.class, "leftBack");
         right_b = hardwareMap.get(DcMotorEx.class, "rightBack");
 
+        left_f.setDirection(DcMotor.Direction.REVERSE);
+        right_b.setDirection(DcMotor.Direction.REVERSE);
+
         right_f.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         left_f.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         right_b.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -81,9 +84,9 @@ public class newTeleOp extends OpMode {
     }
 
     private void runIntake(){
-        if (gamepad1.b) {
+        if (gamepad1.x) {
             intake.setPower(1.0);     // intake in
-        } else if (gamepad1.x) {
+        } else if (gamepad1.b) {
             intake.setPower(-1.0);    // reverse
         } else {
             intake.setPower(0.0);     // stop
@@ -98,5 +101,7 @@ public class newTeleOp extends OpMode {
         left_f.setPower(0);
         right_b.setPower(0);
         left_b.setPower(0);
+        flywheel.setPower(0);
+        intake.setPower(0);
     }
 }
