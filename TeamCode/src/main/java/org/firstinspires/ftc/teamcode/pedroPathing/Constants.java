@@ -44,9 +44,10 @@ public class Constants {
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
             .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
+
     //
     // TO REVERSE ENCODER:
-    // .forwardEncoderDirection(Encoder.REVERSE)
+    //.forwardEncoderDirection(Encoder.REVERSE)
     /// / and/or:
     //.strafeEncoderDirection(Encoder.REVERSE)
 
