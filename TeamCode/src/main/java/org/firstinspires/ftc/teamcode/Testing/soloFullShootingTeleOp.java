@@ -1,12 +1,12 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Testing;
 
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-@TeleOp(name="soloShootingTeleOp", group="TeleOp")
-public class soloShootingTeleOp extends OpMode {
+@TeleOp(name="soloFullShootingTeleOp", group="TeleOp")
+public class soloFullShootingTeleOp extends OpMode {
     // private DcMotorEx right_b, left_f, right_f, left_b;
     private DcMotor flywheel_Left, flywheel_Right;
     //private DcMotor intake;
@@ -85,8 +85,8 @@ public class soloShootingTeleOp extends OpMode {
         }
         prevA = aPressed;
 
-        flywheel_Left.setPower(flywheelOn ? -0.95 : 0.0);
-        flywheel_Right.setPower(flywheelOn ? 0.95 : 0.0);
+        flywheel_Left.setPower(flywheelOn ? 1 : 0.0);
+        flywheel_Right.setPower(flywheelOn ? -1 : 0.0);
     }
 
     private void runIntake(){
