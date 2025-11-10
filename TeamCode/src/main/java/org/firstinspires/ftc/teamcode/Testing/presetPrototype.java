@@ -30,8 +30,8 @@ public class presetPrototype extends OpMode {
 
     // ===== NEW: PRESET RPMs (replace with your tested values) =====
     private static final int PRESET_SHORT_RPM  = 3000; // gamepad2.X
-    private static final int PRESET_MED_RPM    = 3600; // gamepad2.Y
-    private static final int PRESET_LONG_RPM   = 4200; // gamepad2.B
+    private static final int PRESET_MED_RPM    = 3700; // gamepad2.Y, measured should be about 3200
+    private static final int PRESET_LONG_RPM   = 4500; // gamepad2.B measured shoudl be about 3800-3900
 
     // ===== STATE =====
     private boolean flywheelOn = false;
