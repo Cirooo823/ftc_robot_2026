@@ -535,7 +535,7 @@ class LateralVelocityTuner extends OpMode {
  */
 class ForwardZeroPowerAccelerationTuner extends OpMode {
     private final ArrayList<Double> accelerations = new ArrayList<>();
-    public static double VELOCITY = 30;
+    public static double VELOCITY =5; //WAS 30
 
     private double previousVelocity;
     private long previousTimeNano;
@@ -639,7 +639,7 @@ class ForwardZeroPowerAccelerationTuner extends OpMode {
  */
 class LateralZeroPowerAccelerationTuner extends OpMode {
     private final ArrayList<Double> accelerations = new ArrayList<>();
-    public static double VELOCITY = 30;
+    public static double VELOCITY = 10; //was 30
     private double previousVelocity;
     private long previousTimeNano;
     private boolean stopping;
@@ -735,7 +735,8 @@ class LateralZeroPowerAccelerationTuner extends OpMode {
  * @version 1.0, 3/12/2024
  */
 class TranslationalTuner extends OpMode {
-    public static double DISTANCE = 40;
+    public static double DISTANCE = 0.1
+            ; // was 40
     private boolean forward = true;
 
     private Path forwards;

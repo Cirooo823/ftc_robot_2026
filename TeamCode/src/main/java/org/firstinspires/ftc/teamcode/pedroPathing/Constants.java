@@ -21,31 +21,35 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(5.8); //write the robot's mass in the parenthesis, in kg
+            .mass(10) //write the robot's mass in the parenthesis, in kg
+            .forwardZeroPowerAcceleration(-308.419)
+            .lateralZeroPowerAcceleration(-12.975);
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
 
 
     public static MecanumConstants driveConstants = new MecanumConstants()
             .maxPower(1)
+            .xVelocity(2.209)
+            .yVelocity(9.253)
             .rightFrontMotorName("rightFront")
             .rightRearMotorName("rightBack")
             .leftRearMotorName("leftBack")
             .leftFrontMotorName("leftFront")
             .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD) //was reversed
-            .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
+            .rightFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightRearMotorDirection(DcMotorSimple.Direction.REVERSE);
 
 
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(5.275) //X distance from center of the one that rolls forwards/back, in inches
-            .strafePodX(-1.5)//Y distance from center of the one that rolls left/right, in inches
+            .forwardPodY(-3.625) //X distance from center of the one that rolls forwards/back, in inches
+            .strafePodX(-6.5)//Y distance from center of the one that rolls left/right, in inches
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("pinpoint")// change name to what we named the pinpoint in the controller
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)
-            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.FORWARD)
+            .forwardEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED)
             .strafeEncoderDirection(GoBildaPinpointDriver.EncoderDirection.REVERSED);
 
     //
