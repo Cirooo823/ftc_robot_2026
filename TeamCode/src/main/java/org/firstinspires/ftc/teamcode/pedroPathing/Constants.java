@@ -21,7 +21,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
-            .mass(5.8); //write the robot's mass in the parenthesis, in kg
+            .mass(10); //write the robot's mass in the parenthesis, in kg
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
 
@@ -40,8 +40,8 @@ public class Constants {
 
 
     public static PinpointConstants localizerConstants = new PinpointConstants()
-            .forwardPodY(5.275) //X distance from center of the one that rolls forwards/back, in inches
-            .strafePodX(-1.5)//Y distance from center of the one that rolls left/right, in inches
+            .forwardPodY(-3.625) //X distance from center of the one that rolls forwards/back, in inches
+            .strafePodX(-6.5)//Y distance from center of the one that rolls left/right, in inches
             .distanceUnit(DistanceUnit.INCH)
             .hardwareMapName("pinpoint")// change name to what we named the pinpoint in the controller
             .encoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_4_BAR_POD)

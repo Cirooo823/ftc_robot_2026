@@ -1,15 +1,14 @@
 package org.firstinspires.ftc.teamcode.Testing;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.CRServo;
-@Disabled
-@TeleOp(name="secondPrototypeRobot", group="TeleOp")
-public class secondPrototypeRobot extends OpMode {
+
+@TeleOp(name="oldCode", group="TeleOp")
+public class oldCode extends OpMode {
     // ===== DRIVE =====
     private DcMotorEx right_b, left_f, right_f, left_b;
 
@@ -19,37 +18,66 @@ public class secondPrototypeRobot extends OpMode {
     private CRServo   thirdStage;
 
     // ===== FLYWHEEL CONSTANTS (goBILDA 6000 RPM) =====
-    private static final double TICKS_PER_REV     = 28.0;                    // 6000 RPM bare motor encoder
-    private static final double MAX_RPM           = 4500.0;
-    private static final double MAX_TICKS_PER_SEC = (TICKS_PER_REV * MAX_RPM) / 60.0; // 2800 tps
+    private static final double TICKS_PER_REV     = 28.0;          // 5202 encoder
+    private static final double MAX_RPM           = 4500.0;        // shooter cap, not full 6000
+    private static final double MAX_TICKS_PER_SEC = (TICKS_PER_REV * MAX_RPM) / 60.0; // ~2100 tps
+
+    // Outer-loop clamp gain (how aggressively we correct)
+    // Smaller = softer corrections, less overshoot
+    private static final double OUTER_KP          = 0.010;
+
+    // Filter / deadband / ramp limit
+    private static final double RPM_FILTER_ALPHA       = 0.2;     // 0..1, lower = smoother
+    private static final double RPM_TOLERANCE          = 20.0;    // +/- band where we don't correct
+    private static final double MAX_DELTA_TPS_PER_LOOP = 40.0;    // max change in commandedTps each loop
+
+    // Slight under-target bias so REV PIDF overshoot lands nearer real target
+    private static final double TARGET_SCALE           = 0.85;    // stronger bias under target
 
     // Single-start target + step sizes
-    private static final int DEFAULT_RPM   = 5000;  // starts here every time you turn it ON
+    private static final int DEFAULT_RPM   = 3200;  // safer default under MAX_RPM
     private static final int STEP_FINE     = 100;   // hold LB for fine steps
     private static final int STEP_NORMAL   = 300;   // default step (no bumper)
     private static final int STEP_COARSE   = 1000;  // hold RB for big steps
+
+    // ===== PRESET RPMs =====
+    private static final int PRESET_SHORT_RPM  = 3200; // gamepad2.X
+    private static final int PRESET_MED_RPM    = 3400; // gamepad2.Y
+    private static final int PRESET_LONG_RPM   = 3900; // gamepad2.B
 
     // ===== STATE =====
     private boolean flywheelOn = false;
     private boolean intakeOn   = false;
 
-    // Edge detection
+    // Edge detection (g1 intake toggles)
     private boolean prevA=false, prevX=false, prevB=false;
     private boolean prevDU=false, prevDD=false, prevDL=false, prevDR=false;
+
+    // gamepad2 preset button edges
+    private boolean prevX2=false, prevY2=false, prevB2=false;
 
     // Troubleshooting toggle
     private boolean useVelocityControl = true;  // Left-stick click toggles Velocity <-> Power
     private boolean prevLS = false;
 
-    // Flywheel target (driver-adjustable)
+    // Flywheel target (driver-adjustable) in RPM
     private double shooterRPM       = 2000.0; // will snap to DEFAULT_RPM on A=ON
     private double shooterTpsTarget = 0.0;
+
+    // What we actually command after outer-loop clamp
+    private double commandedTps     = 0.0;
+
+    // Filtered RPM for smoother feedback
+    private double filteredRpm      = 0.0;
 
     // Third stage (-1=left, 0=stop, +1=right)
     private int thirdDir = 0;
 
     // Drive scale
     private double driverScale = 1.0;
+
+    // last preset label for telemetry
+    private String lastPreset = "—";
 
     @Override
     public void init() {
@@ -100,10 +128,16 @@ public class secondPrototypeRobot extends OpMode {
         thirdStage = hardwareMap.get(CRServo.class, "thirdStage");
         thirdStage.setPower(0.0);
 
-        // Leave PIDF defaults while determining targets (avoid kF saturation)
-        // Example (optional later):
-        // flywheel_Left.setVelocityPIDFCoefficients(18, 0, 10, 0);
-        // flywheel_Right.setVelocityPIDFCoefficients(18, 0, 10, 0);
+        // ===== Softer explicit PIDF for flywheel velocity =====
+        // You can tweak these if needed:
+        //  - increase P to tighten regulation (may add oscillation)
+        //  - lower F to reduce initial punch / overshoot
+        double P = 8.0;
+        double I = 0.0;
+        double D = 2.0;
+        double F = 8.0;
+        flywheel_Left.setVelocityPIDFCoefficients(P, I, D, F);
+        flywheel_Right.setVelocityPIDFCoefficients(P, I, D, F);
     }
 
     @Override
@@ -142,9 +176,50 @@ public class secondPrototypeRobot extends OpMode {
         boolean a = gamepad2.a;
         if (a && !prevA) {
             flywheelOn = !flywheelOn;
-            if (flywheelOn) shooterRPM = DEFAULT_RPM;
+            if (flywheelOn) {
+                shooterRPM   = DEFAULT_RPM; // will clamp below
+                lastPreset   = "Start(Default)";
+                commandedTps = 0.0;        // reset outer-loop command
+                filteredRpm  = 0.0;        // reset filter
+            } else {
+                shooterRPM       = 0.0;
+                shooterTpsTarget = 0.0;
+                commandedTps     = 0.0;
+                filteredRpm      = 0.0;
+            }
         }
         prevA = a;
+
+        // ===== PRESETS: gamepad2.X / Y / B =====
+        boolean x2 = gamepad2.x;
+        if (x2 && !prevX2) {
+            shooterRPM   = PRESET_SHORT_RPM;
+            flywheelOn   = true;
+            lastPreset   = "Short (X)";
+            commandedTps = 0.0;
+            filteredRpm  = 0.0;
+        }
+        prevX2 = x2;
+
+        boolean y2 = gamepad2.y;
+        if (y2 && !prevY2) {
+            shooterRPM   = PRESET_MED_RPM;
+            flywheelOn   = true;
+            lastPreset   = "Medium (Y)";
+            commandedTps = 0.0;
+            filteredRpm  = 0.0;
+        }
+        prevY2 = y2;
+
+        boolean b2 = gamepad2.b;
+        if (b2 && !prevB2) {
+            shooterRPM   = PRESET_LONG_RPM;
+            flywheelOn   = true;
+            lastPreset   = "Long (B)";
+            commandedTps = 0.0;
+            filteredRpm  = 0.0;
+        }
+        prevB2 = b2;
 
         // Decide step size (hold LB for fine, RB for coarse)
         int step = STEP_NORMAL;
@@ -153,11 +228,17 @@ public class secondPrototypeRobot extends OpMode {
 
         // D-pad Up/Down adjust RPM (rising edges)
         boolean du = gamepad2.dpad_up;
-        if (flywheelOn && du && !prevDU) shooterRPM = clamp(shooterRPM + step, 0, MAX_RPM);
+        if (flywheelOn && du && !prevDU) {
+            shooterRPM = clamp(shooterRPM + step, 0, MAX_RPM);
+            lastPreset = "—"; // manual override
+        }
         prevDU = du;
 
         boolean dd = gamepad2.dpad_down;
-        if (flywheelOn && dd && !prevDD) shooterRPM = clamp(shooterRPM - step, 0, MAX_RPM);
+        if (flywheelOn && dd && !prevDD) {
+            shooterRPM = clamp(shooterRPM - step, 0, MAX_RPM);
+            lastPreset = "—"; // manual override
+        }
         prevDD = dd;
 
         // Toggle control mode with LEFT STICK BUTTON: Velocity <-> Power
@@ -166,47 +247,87 @@ public class secondPrototypeRobot extends OpMode {
         prevLS = ls;
         telemetry.addData("FW Mode", useVelocityControl ? "Velocity" : "Power");
 
-        // Compute target tps from RPM
-        shooterRPM       = clamp(shooterRPM, 0, MAX_RPM);
-        shooterTpsTarget = (shooterRPM / 60.0) * TICKS_PER_REV;
-        double targetTps = Math.abs(shooterTpsTarget); // positive; directions handle spin
+        // Clamp logical target RPM
+        shooterRPM = clamp(shooterRPM, 0, MAX_RPM);
 
-        // Command motors
+        // --- Read current velocity ---
+        double leftVelTps  = flywheel_Left.getVelocity();
+        double rightVelTps = flywheel_Right.getVelocity();
+        double leftAbsTps  = Math.abs(leftVelTps);
+        double rightAbsTps = Math.abs(rightVelTps);
+
+        double rpmL = (leftAbsTps * 60.0) / TICKS_PER_REV;
+        double rpmR = (rightAbsTps * 60.0) / TICKS_PER_REV;
+        double avgRpm = 0.5 * (rpmL + rpmR);
+
+        // Initialize filter on first valid reading after start
+        if (filteredRpm == 0.0 && flywheelOn && (rpmL > 0 || rpmR > 0)) {
+            filteredRpm = avgRpm;
+        }
+
+        // Low-pass filter the RPM to reduce noise / jitter
         if (flywheelOn) {
-            if (useVelocityControl) {
-                flywheel_Left.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                flywheel_Right.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-                flywheel_Left.setVelocity(targetTps);
-                flywheel_Right.setVelocity(targetTps);
-            } else {
-                double power = clamp(shooterRPM / MAX_RPM, 0, 1);
-                flywheel_Left.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                flywheel_Right.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-                flywheel_Left.setPower(power);
-                flywheel_Right.setPower(power);
-                telemetry.addData("Cmd power", "%.2f", power);
-            }
+            filteredRpm = RPM_FILTER_ALPHA * avgRpm + (1.0 - RPM_FILTER_ALPHA) * filteredRpm;
         } else {
+            filteredRpm = 0.0;
+        }
+
+        // RPM error between what you want and what you actually have (filtered)
+        double rpmError = shooterRPM - filteredRpm;
+
+        // Convert RPM error to tps error (same units as setVelocity)
+        double tpsError = (rpmError / 60.0) * TICKS_PER_REV;
+
+        // Compute theoretical tps corresponding to *scaled* target RPM
+        double scaledTargetRPM = shooterRPM * TARGET_SCALE;
+        double tpsTarget       = (scaledTargetRPM / 60.0) * TICKS_PER_REV;
+
+        // --- Outer-loop clamp with deadband, ramp limit, and hard upper cap ---
+        if (flywheelOn && useVelocityControl) {
+            // Only correct if we're outside the tolerance band
+            if (Math.abs(rpmError) > RPM_TOLERANCE) {
+                double deltaTps = OUTER_KP * tpsError;
+
+                // Limit change per loop to avoid big jumps
+                if (deltaTps >  MAX_DELTA_TPS_PER_LOOP) deltaTps =  MAX_DELTA_TPS_PER_LOOP;
+                if (deltaTps < -MAX_DELTA_TPS_PER_LOOP) deltaTps = -MAX_DELTA_TPS_PER_LOOP;
+
+                commandedTps += deltaTps;
+            }
+
+            // Hard clamp:
+            //  - never below 0
+            //  - never above tpsTarget (scaled), so we don't drive too aggressively
+            commandedTps = clamp(commandedTps, 0.0, tpsTarget);
+
+            flywheel_Left.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            flywheel_Right.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            flywheel_Left.setVelocity(commandedTps);
+            flywheel_Right.setVelocity(commandedTps);
+        } else if (flywheelOn && !useVelocityControl) {
+            // Power mode (no outer-loop magic here)
+            double power = clamp(shooterRPM / MAX_RPM, 0, 1);
+            flywheel_Left.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            flywheel_Right.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+            flywheel_Left.setPower(power);
+            flywheel_Right.setPower(power);
+            telemetry.addData("Cmd power", "%.2f", power);
+        } else {
+            commandedTps = 0.0;
             flywheel_Left.setVelocity(0);
             flywheel_Right.setVelocity(0);
         }
 
-        // Readback / Telemetry
-        double leftVel  = flywheel_Left.getVelocity();
-        double rightVel = flywheel_Right.getVelocity();
-        double leftAbs  = Math.abs(leftVel);
-        double rightAbs = Math.abs(rightVel);
-        double rpmL     = (leftAbs * 60.0) / TICKS_PER_REV;
-        double rpmR     = (rightAbs * 60.0) / TICKS_PER_REV;
-
         telemetry.addData("Flywheel", flywheelOn ? "ON" : "OFF");
         telemetry.addData("Start RPM", DEFAULT_RPM);
         telemetry.addData("Step (held)", (gamepad1.left_bumper ? STEP_FINE : gamepad1.right_bumper ? STEP_COARSE : STEP_NORMAL));
-        telemetry.addData("Target RPM", "%.0f / %.0f", shooterRPM, MAX_RPM);
-        telemetry.addData("Target tps", "%.0f / %.0f", targetTps, MAX_TICKS_PER_SEC);
-        telemetry.addData("Measured tps (L,R)", "%.0f, %.0f", leftAbs, rightAbs);
-        telemetry.addData("Measured RPM (L,R)", "%.0f, %.0f", rpmL, rpmR);
-        telemetry.addData("Signs (L,R)", "%s, %s", (leftVel>=0?"+":"-"), (rightVel>=0?"+":"-"));
+        telemetry.addData("Preset Last", lastPreset);
+        telemetry.addData("Target RPM (logical)", "%.0f / %.0f", shooterRPM, MAX_RPM);
+        telemetry.addData("Scaled target RPM", "%.0f", scaledTargetRPM);
+        telemetry.addData("Measured RPM (L,R,avg)", "%.0f, %.0f, %.0f", rpmL, rpmR, avgRpm);
+        telemetry.addData("Filtered RPM", "%.0f", filteredRpm);
+        telemetry.addData("Cmd tps (outer loop)", "%.0f / %.0f", commandedTps, tpsTarget);
+        telemetry.addData("RPM error (filtered)", "%.0f", rpmError);
     }
 
     // ===================== THIRD STAGE (CR SERVO) =====================
@@ -230,7 +351,7 @@ public class secondPrototypeRobot extends OpMode {
 
     // ===================== INTAKE =====================
     private void runIntake() {
-        // X toggles intake reverse (-1), B holds intake forward (+1)
+        // X toggles intake reverse (-1), B holds intake forward (+1)  [gamepad1]
         boolean x = gamepad1.x;
         if (x && !prevX) intakeOn = !intakeOn;
         prevX = x;
@@ -238,9 +359,9 @@ public class secondPrototypeRobot extends OpMode {
         boolean b = gamepad1.b;
 
         if (b) {
-            intake.setPower(1.0);        // hold forward
+            intake.setPower(-1.0);        // hold forward
         } else if (intakeOn) {
-            intake.setPower(-1.0);       // toggled reverse
+            intake.setPower(1.0);       // toggled reverse
         } else {
             intake.setPower(0.0);        // stop
         }
@@ -266,4 +387,3 @@ public class secondPrototypeRobot extends OpMode {
         return Math.max(lo, Math.min(hi, v));
     }
 }
-
