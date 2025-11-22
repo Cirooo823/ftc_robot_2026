@@ -19,35 +19,32 @@ public class automatictele extends OpMode {
 
     // ===== FLYWHEEL CONSTANTS (goBILDA 6000 RPM) =====
     private static final double TICKS_PER_REV     = 28.0;          // 5202 encoder
-    private static final double MAX_RPM           = 4500.0;        // shooter cap, not full 6000
-    private static final double MAX_TICKS_PER_SEC = (TICKS_PER_REV * MAX_RPM) / 60.0; // ~2100 tps
+    private static final double MAX_RPM           = 4500.0;        // soft cap
+    private static final double MAX_TICKS_PER_SEC = (TICKS_PER_REV * MAX_RPM) / 60.0;
 
-    // ===== OUTER VELOCITY LOOP TUNING =====
-    // More conservative to reduce oscillation / overshoot
-    private static final double OUTER_KP               = 0.015;
-    private static final double RPM_FILTER_ALPHA       = 0.15;    // 0..1, lower = smoother
-    private static final double RPM_TOLERANCE          = 15.0;    // +/- band where we don't correct
-    private static final double MAX_DELTA_TPS_PER_LOOP = 60.0;    // max change in commandedTps each loop
+    // ===== SETPOINT RAMPING =====
+    // We ramp the *commanded* RPM towards the requested shooterRPM to avoid huge step changes
+    // that cause overshoot.
+    private static final double MAX_RPM_STEP_PER_LOOP = 120.0; // rpm change per loop (tune this)
 
-    // Slight under-target bias so REV PIDF overshoot lands nearer real target
-    private static final double TARGET_SCALE           = 0.88;
+    // ===== FILTER / READY BAND (for telemetry & auto feed only) =====
+    private static final double RPM_FILTER_ALPHA = 0.15;  // 0..1, lower = smoother
 
-    // "Ready" band: 50–100 RPM BELOW target for LONG preset
-    // shooterRPM - 100 <= filteredRpm <= shooterRPM - 50
-    private static final double READY_BELOW_LOW   = 100.0;
+    // shooterRPM - 150 <= filteredRpm <= shooterRPM - 50
+    private static final double READY_BELOW_LOW   = 150.0;
     private static final double READY_BELOW_HIGH  = 50.0;
     private static final double READY_LATCH_TIME  = 1.0;   // seconds of auto-feed
 
-    // Single-start target + step sizes
-    private static final int DEFAULT_RPM   = 3300;  // default under MAX_RPM
-    private static final int STEP_FINE     = 100;   // hold LB for fine steps
-    private static final int STEP_NORMAL   = 300;   // default step (no bumper)
-    private static final int STEP_COARSE   = 1000;  // hold RB for big steps
+    // ===== DRIVER SETTINGS =====
+    private static final int DEFAULT_RPM   = 3300;
+    private static final int STEP_FINE     = 100;
+    private static final int STEP_NORMAL   = 250;   // slightly smaller than 300 to reduce jumps
+    private static final int STEP_COARSE   = 800;   // coarse bump
 
-    // ===== PRESET RPMs =====
-    private static final int PRESET_SHORT_RPM  = 3300; // gamepad2.X
-    private static final int PRESET_MED_RPM    = 3600; // gamepad2.Y
-    private static final int PRESET_LONG_RPM   = 3800; // gamepad2.B
+    // ===== PRESET RPMs (keep your current values) =====
+    private static final int PRESET_SHORT_RPM  = 3100; // gamepad2.X
+    private static final int PRESET_MED_RPM    = 3400; // gamepad2.Y
+    private static final int PRESET_LONG_RPM   = 3600; // gamepad2.B
 
     // ===== STATE =====
     private boolean flywheelOn = false;
@@ -60,26 +57,28 @@ public class automatictele extends OpMode {
     // gamepad2 preset button edges
     private boolean prevX2=false, prevY2=false, prevB2=false;
 
-    // Troubleshooting toggle
-    private boolean useVelocityControl = true;  // Left-stick click toggles Velocity <-> Power
+    // Toggle velocity vs power (keep for testing)
+    private boolean useVelocityControl = true;
     private boolean prevLS = false;
 
-    // Flywheel target (driver-adjustable) in RPM
-    private double shooterRPM       = 2000.0; // will snap to DEFAULT_RPM on A=ON
-    private double shooterTpsTarget = 0.0;
+    // User-requested target RPM
+    private double shooterRPM = 2000.0;
 
-    // What we actually command after outer-loop clamp
-    private double commandedTps     = 0.0;
+    // Internally-ramped commanded RPM (what we actually send to setVelocity)
+    private double commandedRPM = 0.0;
 
-    // Filtered RPM for smoother feedback
-    private double filteredRpm      = 0.0;
+    // Ticks/sec we actually command
+    private double commandedTps = 0.0;
 
-    // Third stage (-1=left, 0=stop, +1=right)
+    // Filtered RPM for “ready” logic
+    private double filteredRpm = 0.0;
+
+    // Third stage (-1=left, 0=stop, +1=right) for manual control
     private int thirdDir = 0;
 
-    // Automatic "ready to shoot" flags (for long preset)
-    private boolean readyToShoot         = false;
-    private boolean readyLatched         = false;
+    // Auto feed state (long preset)
+    private boolean readyToShoot          = false;
+    private boolean readyLatched          = false;
     private double  readyLatchedStartTime = 0.0;
 
     // Drive scale
@@ -96,7 +95,6 @@ public class automatictele extends OpMode {
         left_b  = hardwareMap.get(DcMotorEx.class, "leftBack");
         right_b = hardwareMap.get(DcMotorEx.class, "rightBack");
 
-        // Your working directions
         left_f.setDirection(DcMotor.Direction.REVERSE);
         right_b.setDirection(DcMotor.Direction.REVERSE);
         right_f.setDirection(DcMotor.Direction.REVERSE);
@@ -116,32 +114,28 @@ public class automatictele extends OpMode {
         flywheel_Right = hardwareMap.get(DcMotorEx.class, "flywheel_Right");
         intake         = hardwareMap.get(DcMotor.class, "intake");
 
-        // Flywheel encoders for velocity control
         flywheel_Left.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheel_Right.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flywheel_Left.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         flywheel_Right.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
-        // Coasting is typical for flywheels
         flywheel_Left.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         flywheel_Right.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
-        // Shared shaft via miter gears: send same positive velocity; flip one direction
         flywheel_Left.setDirection(DcMotorSimple.Direction.FORWARD);
         flywheel_Right.setDirection(DcMotorSimple.Direction.REVERSE);
 
-        // Intake
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        // Third stage CR servo
         thirdStage = hardwareMap.get(CRServo.class, "thirdStage");
         thirdStage.setPower(0.0);
 
-        // ===== Softer explicit PIDF for flywheel velocity =====
-        double P = 8.0;
+        // ===== PIDF FOR FLYWHEEL =====
+        // These are starting values; you’ll tune them on-robot.
+        double P = 10.0;
         double I = 0.0;
-        double D = 2.0;
-        double F = 8.0;
+        double D = 1.0;
+        double F = 11.0;
         flywheel_Left.setVelocityPIDFCoefficients(P, I, D, F);
         flywheel_Right.setVelocityPIDFCoefficients(P, I, D, F);
     }
@@ -153,16 +147,16 @@ public class automatictele extends OpMode {
         runThirdStage();
         runIntake();
 
-        telemetry.update(); // one update per loop
+        telemetry.update();
     }
 
     // ===================== DRIVE =====================
     private void drive(){
         driverScale = (gamepad1.right_trigger > 0.05) ? 0.25 : 1.0;
 
-        double y  = -gamepad1.left_stick_y;   // forward/back
-        double x  = -gamepad1.right_stick_x;  // strafe
-        double rx = -gamepad1.left_stick_x;   // rotate
+        double y  = -gamepad1.left_stick_y;
+        double x  = -gamepad1.right_stick_x;
+        double rx = -gamepad1.left_stick_x;
 
         double ys  = y  * driverScale;
         double xs  = x  * driverScale;
@@ -183,16 +177,15 @@ public class automatictele extends OpMode {
         if (a && !prevA) {
             flywheelOn = !flywheelOn;
             if (flywheelOn) {
-                shooterRPM         = DEFAULT_RPM; // will clamp below
+                shooterRPM         = DEFAULT_RPM;
+                commandedRPM       = 0.0;
                 lastPreset         = "Start(Default)";
-                commandedTps       = 0.0;        // reset outer-loop command
-                filteredRpm        = 0.0;        // reset filter
+                filteredRpm        = 0.0;
                 readyLatched       = false;
                 readyToShoot       = false;
             } else {
                 shooterRPM         = 0.0;
-                shooterTpsTarget   = 0.0;
-                commandedTps       = 0.0;
+                commandedRPM       = 0.0;
                 filteredRpm        = 0.0;
                 readyLatched       = false;
                 readyToShoot       = false;
@@ -206,8 +199,6 @@ public class automatictele extends OpMode {
             shooterRPM         = PRESET_SHORT_RPM;
             flywheelOn         = true;
             lastPreset         = "Short (X)";
-            commandedTps       = 0.0;
-            filteredRpm        = 0.0;
             readyLatched       = false;
             readyToShoot       = false;
         }
@@ -218,8 +209,6 @@ public class automatictele extends OpMode {
             shooterRPM         = PRESET_MED_RPM;
             flywheelOn         = true;
             lastPreset         = "Medium (Y)";
-            commandedTps       = 0.0;
-            filteredRpm        = 0.0;
             readyLatched       = false;
             readyToShoot       = false;
         }
@@ -230,8 +219,6 @@ public class automatictele extends OpMode {
             shooterRPM         = PRESET_LONG_RPM;
             flywheelOn         = true;
             lastPreset         = "Long (B)";
-            commandedTps       = 0.0;
-            filteredRpm        = 0.0;
             readyLatched       = false;
             readyToShoot       = false;
         }
@@ -242,11 +229,10 @@ public class automatictele extends OpMode {
         if (gamepad2.left_bumper)  step = STEP_FINE;
         if (gamepad2.right_bumper) step = STEP_COARSE;
 
-        // D-pad Up/Down adjust RPM (rising edges)
         boolean du = gamepad2.dpad_up;
         if (flywheelOn && du && !prevDU) {
             shooterRPM   = clamp(shooterRPM + step, 0, MAX_RPM);
-            lastPreset   = "—"; // manual override
+            lastPreset   = "—";
             readyLatched = false;
             readyToShoot = false;
         }
@@ -255,19 +241,18 @@ public class automatictele extends OpMode {
         boolean dd = gamepad2.dpad_down;
         if (flywheelOn && dd && !prevDD) {
             shooterRPM   = clamp(shooterRPM - step, 0, MAX_RPM);
-            lastPreset   = "—"; // manual override
+            lastPreset   = "—";
             readyLatched = false;
             readyToShoot = false;
         }
         prevDD = dd;
 
-        // Toggle control mode with LEFT STICK BUTTON: Velocity <-> Power
+        // Toggle velocity vs power
         boolean ls = gamepad2.left_stick_button;
         if (ls && !prevLS) useVelocityControl = !useVelocityControl;
         prevLS = ls;
         telemetry.addData("FW Mode", useVelocityControl ? "Velocity" : "Power");
 
-        // Clamp logical target RPM
         shooterRPM = clamp(shooterRPM, 0, MAX_RPM);
 
         // --- Read current velocity ---
@@ -276,56 +261,46 @@ public class automatictele extends OpMode {
         double leftAbsTps  = Math.abs(leftVelTps);
         double rightAbsTps = Math.abs(rightVelTps);
 
-        double rpmL = (leftAbsTps * 60.0) / TICKS_PER_REV;
-        double rpmR = (rightAbsTps * 60.0) / TICKS_PER_REV;
+        double rpmL   = (leftAbsTps * 60.0) / TICKS_PER_REV;
+        double rpmR   = (rightAbsTps * 60.0) / TICKS_PER_REV;
         double avgRpm = 0.5 * (rpmL + rpmR);
 
-        // Initialize filter on first valid reading after start
+        // Filtered RPM (for ready logic & telemetry only)
         if (filteredRpm == 0.0 && flywheelOn && (rpmL > 0 || rpmR > 0)) {
             filteredRpm = avgRpm;
         }
-
-        // Low-pass filter the RPM to reduce noise / jitter
         if (flywheelOn) {
-            filteredRpm = RPM_FILTER_ALPHA * avgRpm + (1.0 - RPM_FILTER_ALPHA) * filteredRpm;
+            filteredRpm = RPM_FILTER_ALPHA * avgRpm
+                    + (1.0 - RPM_FILTER_ALPHA) * filteredRpm;
         } else {
             filteredRpm = 0.0;
         }
 
-        // RPM error between what you want and what you actually have (filtered)
-        double rpmError = shooterRPM - filteredRpm;
-
-        // Convert RPM error to tps error (same units as setVelocity)
-        double tpsError = (rpmError / 60.0) * TICKS_PER_REV;
-
-        // Compute theoretical tps corresponding to *scaled* target RPM
-        double scaledTargetRPM = shooterRPM * TARGET_SCALE;
-        double tpsTarget       = (scaledTargetRPM / 60.0) * TICKS_PER_REV;
-
-        // --- Outer-loop clamp with deadband, ramp limit, and hard upper cap ---
+        // ===== RAMP THE SETPOINT =====
+        // Move commandedRPM gradually toward shooterRPM
         if (flywheelOn && useVelocityControl) {
-            // Only correct if we're outside the tolerance band
-            if (Math.abs(rpmError) > RPM_TOLERANCE) {
-                double deltaTps = OUTER_KP * tpsError;
+            double delta = shooterRPM - commandedRPM;
+            double maxStep = MAX_RPM_STEP_PER_LOOP;
 
-                // Limit change per loop to avoid big jumps
-                if (deltaTps >  MAX_DELTA_TPS_PER_LOOP) deltaTps =  MAX_DELTA_TPS_PER_LOOP;
-                if (deltaTps < -MAX_DELTA_TPS_PER_LOOP) deltaTps = -MAX_DELTA_TPS_PER_LOOP;
-
-                commandedTps += deltaTps;
+            if (Math.abs(delta) <= maxStep) {
+                commandedRPM = shooterRPM;
+            } else {
+                commandedRPM += Math.signum(delta) * maxStep;
             }
 
-            // Hard clamp:
-            //  - never below 0
-            //  - never above tpsTarget (scaled), so we don't drive too aggressively
-            commandedTps = clamp(commandedTps, 0.0, tpsTarget);
+            // Convert commandedRPM to ticks/sec
+            double tpsTarget = (commandedRPM / 60.0) * TICKS_PER_REV;
+            if (tpsTarget > MAX_TICKS_PER_SEC) tpsTarget = MAX_TICKS_PER_SEC;
+
+            commandedTps = tpsTarget;
 
             flywheel_Left.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
             flywheel_Right.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
-            flywheel_Left.setVelocity(commandedTps);
-            flywheel_Right.setVelocity(commandedTps);
+            flywheel_Left.setVelocity(tpsTarget);
+            flywheel_Right.setVelocity(tpsTarget);
+
         } else if (flywheelOn && !useVelocityControl) {
-            // Power mode (no outer-loop magic here)
+            // Power mode for comparison/testing
             double power = clamp(shooterRPM / MAX_RPM, 0, 1);
             flywheel_Left.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
             flywheel_Right.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -333,16 +308,16 @@ public class automatictele extends OpMode {
             flywheel_Right.setPower(power);
             telemetry.addData("Cmd power", "%.2f", power);
         } else {
+            commandedRPM = 0.0;
             commandedTps = 0.0;
             flywheel_Left.setVelocity(0);
             flywheel_Right.setVelocity(0);
         }
 
-        // ===== READY-TO-SHOOT LOGIC (for Long preset only) =====
+        // ===== READY-TO-SHOOT LOGIC (Long preset only) =====
         boolean longPresetActive = "Long (B)".equals(lastPreset);
 
         if (flywheelOn && useVelocityControl && longPresetActive) {
-            // Are we in the 50–100 RPM below target band?
             boolean inReadyBand =
                     (filteredRpm >= shooterRPM - READY_BELOW_LOW) &&
                             (filteredRpm <= shooterRPM - READY_BELOW_HIGH);
@@ -350,7 +325,6 @@ public class automatictele extends OpMode {
             double now = getRuntime();
 
             if (inReadyBand && !readyLatched) {
-                // Just entered ready band: latch for READY_LATCH_TIME seconds
                 readyLatched = true;
                 readyLatchedStartTime = now;
             }
@@ -362,37 +336,35 @@ public class automatictele extends OpMode {
                 readyToShoot = false;
             }
         } else {
-            // Outside long preset / mode: clear ready state
             readyLatched = false;
             readyToShoot = false;
         }
 
         telemetry.addData("Flywheel", flywheelOn ? "ON" : "OFF");
         telemetry.addData("Start RPM", DEFAULT_RPM);
-        telemetry.addData("Step (held)", (gamepad1.left_bumper ? STEP_FINE : gamepad1.right_bumper ? STEP_COARSE : STEP_NORMAL));
+        telemetry.addData("Step (held)", (gamepad1.left_bumper ? STEP_FINE :
+                gamepad1.right_bumper ? STEP_COARSE : STEP_NORMAL));
         telemetry.addData("Preset Last", lastPreset);
-        telemetry.addData("Target RPM (logical)", "%.0f / %.0f", shooterRPM, MAX_RPM);
-        telemetry.addData("Scaled target RPM", "%.0f", scaledTargetRPM);
+        telemetry.addData("Target RPM (user)", "%.0f", shooterRPM);
+        telemetry.addData("Commanded RPM (ramped)", "%.0f", commandedRPM);
         telemetry.addData("Measured RPM (L,R,avg)", "%.0f, %.0f, %.0f", rpmL, rpmR, avgRpm);
         telemetry.addData("Filtered RPM", "%.0f", filteredRpm);
-        telemetry.addData("Cmd tps (outer loop)", "%.0f / %.0f", commandedTps, tpsTarget);
-        telemetry.addData("RPM error (filtered)", "%.0f", rpmError);
+        telemetry.addData("Cmd tps", "%.0f / %.0f", commandedTps, MAX_TICKS_PER_SEC);
         telemetry.addData("ReadyLatched", readyLatched);
         telemetry.addData("ReadyToShoot (Long)", readyToShoot);
     }
 
     // ===================== THIRD STAGE (CR SERVO) =====================
     private void runThirdStage() {
-        // If we're on LONG preset and auto ready-to-shoot is true,
-        // override manual control and feed automatically.
+        // Auto feed for LONG preset when ready
         if (readyToShoot && "Long (B)".equals(lastPreset) && flywheelOn && useVelocityControl) {
-            thirdStage.setPower(-1.0);  // REVERSED direction for auto feed
+            thirdStage.setPower(-1.0);  // reversed feed direction
             telemetry.addData("ThirdStage", "AUTO FEED (READY)");
             telemetry.addData("ThirdStage Power", "%.2f", -1.0);
             return;
         }
 
-        // If we're on long preset but NOT ready, force stop (no accidental spin)
+        // Long preset but NOT ready -> hold
         if ("Long (B)".equals(lastPreset) && flywheelOn && useVelocityControl) {
             thirdStage.setPower(0.0);
             telemetry.addData("ThirdStage", "AUTO HOLD (NOT READY)");
@@ -400,7 +372,7 @@ public class automatictele extends OpMode {
             return;
         }
 
-        // ===== Manual control for other presets =====
+        // Manual control for other presets
         boolean dl = gamepad2.dpad_left;
         if (dl && !prevDL) thirdDir = (thirdDir == -1) ? 0 : -1;
         prevDL = dl;
@@ -418,7 +390,6 @@ public class automatictele extends OpMode {
 
     // ===================== INTAKE =====================
     private void runIntake() {
-        // X toggles intake reverse (-1), B holds intake forward (+1)  [gamepad1]
         boolean x = gamepad1.x;
         if (x && !prevX) intakeOn = !intakeOn;
         prevX = x;
@@ -430,19 +401,17 @@ public class automatictele extends OpMode {
         } else if (intakeOn) {
             intake.setPower(1.0);         // toggled reverse
         } else {
-            intake.setPower(0.0);         // stop
+            intake.setPower(0.0);
         }
     }
 
     @Override
     public void stop() {
-        // Stop drive
         right_f.setPower(0);
         left_f.setPower(0);
         right_b.setPower(0);
         left_b.setPower(0);
 
-        // Stop mechanisms
         flywheel_Left.setVelocity(0);
         flywheel_Right.setVelocity(0);
         intake.setPower(0);
