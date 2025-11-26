@@ -324,7 +324,7 @@ class TurnTuner extends OpMode {
  */
 class ForwardVelocityTuner extends OpMode {
     private final ArrayList<Double> velocities = new ArrayList<>();
-    public static double DISTANCE = 1; //was 48
+    public static double DISTANCE = 48; //was 48
     public static double RECORD_NUMBER = 10;//
 
     private boolean end;
@@ -487,7 +487,7 @@ class LateralVelocityTuner extends OpMode {
         drawCurrentAndHistory();
 
         if (!end) {
-            if (Math.abs(follower.getPose().getX()) > DISTANCE) { //was .getY
+            if (Math.abs(follower.getPose().getY()) > DISTANCE) { //was .getY
                 end = true;
                 stopRobot();
             } else {
@@ -1011,7 +1011,7 @@ class Line extends OpMode {
  * @version 1.0, 3/13/2024
  */
 class CentripetalTuner extends OpMode {
-    public static double DISTANCE = 20;
+    public static double DISTANCE = 20;//was 20
     private boolean forward = true;
 
     private Path forwards;
@@ -1141,7 +1141,7 @@ class Triangle extends OpMode {
  * @version 1.0, 3/12/2024
  */
 class Circle extends OpMode {
-    public static double RADIUS = 10;
+    public static double RADIUS = 20;
     private PathChain circle;
 
     public void start() {
@@ -1247,7 +1247,7 @@ class Drawing {
 
 
         panelsField.setStyle(style);
-        panelsField.moveCursor(displayX, displayY); //was originally (pose.getX(), pose.getY()
+        panelsField.moveCursor(pose.getX(), pose.getY()); //was originally (pose.getX(), pose.getY()
         panelsField.circle(ROBOT_RADIUS);
 
         Vector v = pose.getHeadingAsUnitVector(); //was originally =pose.getHeadingAsUnitVector()
