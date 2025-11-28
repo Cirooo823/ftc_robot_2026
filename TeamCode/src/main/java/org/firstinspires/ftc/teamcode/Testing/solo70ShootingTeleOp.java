@@ -1,10 +1,11 @@
 package org.firstinspires.ftc.teamcode.Testing;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-
+@Disabled
 @TeleOp(name="solo70ShootingTeleOp", group="TeleOp")
 public class solo70ShootingTeleOp extends OpMode {
     // private DcMotorEx right_b, left_f, right_f, left_b;
