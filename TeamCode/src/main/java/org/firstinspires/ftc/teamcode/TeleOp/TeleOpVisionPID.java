@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.Testing;
+package org.firstinspires.ftc.teamcode.TeleOp;
 
 import android.util.Size;
 
@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 // Use your voltage-compensated flywheel controller
-import org.firstinspires.ftc.teamcode.Testing.VoltageFlywheelController;
+
 
 @TeleOp(name="TeleOpVisionPID", group="TeleOp")
 public class TeleOpVisionPID extends OpMode {
@@ -50,11 +50,11 @@ public class TeleOpVisionPID extends OpMode {
     private int thirdDir = 0;
 
     // ===== PRESET RPMs (keep your current values) =====
-    private static final int PRESET_SHORT_RPM      = 3100; // gamepad2.X
-    private static final int PRESET_SHORT_MED_RPM  = 3300; // gamepad2 LB
-    private static final int PRESET_MED_RPM        = 3500; // gamepad2.Y
-    private static final int PRESET_MED_LONG_RPM   = 3650; // gamepad2 RB
-    private static final int PRESET_LONG_RPM       = 3800; // gamepad2.B
+    private static final int PRESET_SHORT_RPM      = 3000; // gamepad2.X
+    private static final int PRESET_SHORT_MED_RPM  = 3200; // gamepad2 LB
+    private static final int PRESET_MED_RPM        = 3400; // gamepad2.Y
+    private static final int PRESET_MED_LONG_RPM   = 3550; // gamepad2 RB
+    private static final int PRESET_LONG_RPM       = 3700; // gamepad2.B
 
     // ===== VISION (from DistanceTesting) =====
     private VisionPortal      visionPortal;
