@@ -289,14 +289,22 @@ public class TeleOpVisionPID extends OpMode {
 
         boolean b = gamepad1.b;
 
+        double intakePower = 0.0;
+
         if (b) {
-            intake.setPower(-1.0);        // hold forward (your chosen direction)
+            intakePower = -1.0;  // hard reverse
         } else if (intakeOn) {
-            intake.setPower(1.0);         // toggled reverse
-        } else {
-            intake.setPower(0.0);
+            // If flywheel is on, limit current draw
+            if (flywheelController.isFlywheelOn()) {
+                intakePower = 0.5;   // softer intake while shooting
+            } else {
+                intakePower = 1.0;   // full speed when just intaking
+            }
         }
+
+        intake.setPower(intakePower);
     }
+
 
     // ===================== THIRD STAGE (CR SERVO) =====================
     private void runThirdStage() {
