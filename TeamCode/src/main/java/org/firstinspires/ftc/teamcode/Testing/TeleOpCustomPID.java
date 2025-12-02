@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 // IMPORT YOUR CUSTOM FLYWHEEL CONTROLLER CLASS
-import org.firstinspires.ftc.teamcode.Testing.FlywheelController; // ADJUST THIS PATH IF YOUR PACKAGE IS DIFFERENT
+
 
 @TeleOp(name="TeleOpCustomPID", group="TeleOp")
 public class TeleOpCustomPID extends OpMode {
@@ -18,35 +18,38 @@ public class TeleOpCustomPID extends OpMode {
 
     // ===== MECHANISMS =====
     private DcMotorEx flywheel_Left, flywheel_Right;
-    private DcMotor   intake;
+    private DcMotor intake;
     private CRServo thirdStage;
 
     private double driverScale = 1.0;
 
     // ===== STATE =====
     private boolean flywheelOn = false;
-    private boolean intakeOn   = false;
+    private boolean intakeOn = false;
 
     // Edge detection (g1 intake toggles)
-    private boolean prevA=false, prevX=false;
-    private boolean prevDU=false, prevDD=false, prevDL=false, prevDR=false;
+    private boolean prevA = false, prevX = false;
+    private boolean prevDU = false, prevDD = false, prevDL = false, prevDR = false;
 
     // gamepad2 preset button edges
-    private boolean prevA2=false, prevX2=false, prevY2=false, prevB2=false;
+    private boolean prevA2 = false, prevX2 = false, prevY2 = false, prevB2 = false, prevLB2 = false, prevRB2 = false;
 
     private int thirdDir = 0;
 
     // ===== PRESET RPMs (keep your current values) =====
-    private static final int PRESET_SHORT_RPM  = 3300; // gamepad2.X
-    private static final int PRESET_MED_RPM    = 3600; // gamepad2.Y
-    private static final int PRESET_LONG_RPM   = 3900; // gamepad2.B
+    private static final int PRESET_SHORT_RPM = 3300; // gamepad2.X
+    private static final int PRESET_SHORT_MED_RPM = 3500; // gamepad2 lb
+    private static final int PRESET_MED_RPM = 3700; // gamepad2.Y
+    private static final int PRESET_MED_LONG_RPM = 3900; // gamepad 2 rb
+    private static final int PRESET_LONG_RPM = 4100; // gamepad2.B
+
 
     @Override
     public void init() {
         // ---- Map drive ----
-        left_f  = hardwareMap.get(DcMotorEx.class, "leftFront");
+        left_f = hardwareMap.get(DcMotorEx.class, "leftFront");
         right_f = hardwareMap.get(DcMotorEx.class, "rightFront");
-        left_b  = hardwareMap.get(DcMotorEx.class, "leftBack");
+        left_b = hardwareMap.get(DcMotorEx.class, "leftBack");
         right_b = hardwareMap.get(DcMotorEx.class, "rightBack");
 
         left_f.setDirection(DcMotor.Direction.REVERSE);
@@ -64,9 +67,9 @@ public class TeleOpCustomPID extends OpMode {
         left_b.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // ---- Mechanisms ----
-        flywheel_Left  = hardwareMap.get(DcMotorEx.class, "flywheel_Left");
+        flywheel_Left = hardwareMap.get(DcMotorEx.class, "flywheel_Left");
         flywheel_Right = hardwareMap.get(DcMotorEx.class, "flywheel_Right");
-        intake         = hardwareMap.get(DcMotor.class, "intake");
+        intake = hardwareMap.get(DcMotor.class, "intake");
 
         flywheel_Left.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         flywheel_Right.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -101,40 +104,50 @@ public class TeleOpCustomPID extends OpMode {
         telemetry.update();
     }
 
-
-    private void runFlywheel(){
-        if (gamepad2.x && !prevX2) {
+    private void runFlywheel() {
+        boolean x2 = gamepad2.x;
+        if (x2 && !prevX2) {
             flywheelController.turnFlywheelOn();
             flywheelController.setFlywheelTargetRPM(PRESET_SHORT_RPM);
-            prevX2 = true;
-        } else if (!prevX2) {
-            prevX2 = false;
         }
+        prevX2 = x2;
 
-        if (gamepad2.y && !prevY2) {
+        boolean y2 = gamepad2.y;
+        if (y2 &&!prevY2) {
             flywheelController.turnFlywheelOn();
             flywheelController.setFlywheelTargetRPM(PRESET_MED_RPM);
-            prevY2 = true;
-        } else if (!prevY2) {
-            prevY2 = false;
         }
+        prevY2 = y2;
 
-        if (gamepad2.b && !prevB2) {
+        boolean b2 = gamepad2.b;
+        if (b2 && !prevB2){
             flywheelController.turnFlywheelOn();
             flywheelController.setFlywheelTargetRPM(PRESET_LONG_RPM);
-            prevB2 = true;
-        } else if (!prevB2) {
-            prevB2 = false;
         }
+        prevB2 = b2;
 
-        if (gamepad2.a && !prevA2) {
-            flywheelController.turnFlywheelOff();
-            prevA2 = true;
-        } else if (!prevA2) {
-            prevA2 = false;
+        boolean lb2 = gamepad2.left_bumper;
+        if (lb2 && !prevLB2) {
+            flywheelController.turnFlywheelOn();
+            flywheelController.setFlywheelTargetRPM(PRESET_SHORT_MED_RPM);
         }
+        prevLB2 = lb2;
+
+        boolean rb2 = gamepad2.right_bumper;
+        if (rb2 && !prevRB2) {
+            flywheelController.turnFlywheelOn();
+            flywheelController.setFlywheelTargetRPM(PRESET_MED_LONG_RPM);
+        }
+        prevRB2 = rb2;
+
+        boolean a2 = gamepad2.a;
+        if (a2 && !prevA2) {
+            flywheelController.turnFlywheelOff();
+        }
+        prevA2 = a2;
     }
-    private void drive(){
+
+    private void drive() {
         driverScale = (gamepad1.right_trigger > 0.05) ? 0.25 : 1.0;
 
         double y  = -gamepad1.left_stick_y;
