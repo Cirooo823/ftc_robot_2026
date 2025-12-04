@@ -2,46 +2,47 @@ package org.firstinspires.ftc.teamcode.TeleOp;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.VoltageSensor;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.VoltageSensor;
 
-public class VoltageFlywheelController {
+public class VoltageFlywheelController { // Retaining Warriors' class name
+
     // --- HARDWARE ---
     private DcMotorEx flywheel_Left;
     private DcMotorEx flywheel_Right;
 
-    // --- NEW: VOLTAGE SENSOR (for feedforward compensation) ---
+    // --- VOLTAGE SENSOR ---
     private VoltageSensor batteryVoltageSensor;
-    // Tune this to whatever voltage you consider "nominal" when you tuned kF.
-    // 12.0–13.0 is typical for an FTC 12V system fresh off the charger.
-    private static final double NOMINAL_VOLTAGE = 13.0;
+    private final double NOMINAL_VOLTAGE = 13.0; // Define your nominal voltage. Tune kF/kP at this voltage.
 
     // --- HARDWARE CONSTANTS ---
-    private final DcMotorSimple.Direction LEFT_DIR  = DcMotorSimple.Direction.FORWARD;
-    private final DcMotorSimple.Direction RIGHT_DIR = DcMotorSimple.Direction.REVERSE;
-    private final double TICKS_PER_REVOLUTION = 28.0; // Correct for GoBilda 5203 1:1
+    // !!! IMPORTANT: Verify these directions match your physical robot's wiring.
+    private final DcMotorSimple.Direction LEFT_DIR = DcMotorSimple.Direction.FORWARD;  // Example
+    private final DcMotorSimple.Direction RIGHT_DIR = DcMotorSimple.Direction.REVERSE; // Example
+    private final double TICKS_PER_REVOLUTION = 28.0; // GoBilda 5203 1:1
 
-    // --- PIDF COEFFICIENTS (your tuned values) ---
-    public static double kF = 0.00041; // YOUR TUNED kF
-    public static double kP = 0.0001;  // YOUR TUNED kP
-    public static double kI = 0.0;      // Likely remains 0.0
-    public static double kD = 0.0;      // Likely remains 0.0
+    // --- PIDF COEFFICIENTS (Warriors' values, as starting point) ---
+    public static double kF = 0.0004;
+    public static double kP = 0.0001;
+    public static double kI = 0.0; // Start at 0, tune if needed
+    public static double kD = 0.0; // Start at 0, rarely needed for flywheels
 
-    // --- PID State Variables ---
-    private double lastErrorL = 0, lastErrorR = 0;
-    private double integralL  = 0, integralR  = 0;
-    private ElapsedTime pidTimer = new ElapsedTime();
+    // --- PID State Variables (For separate PID loops) ---
+    private double lastErrorL = 0;
+    private double integralL = 0;
+    private double lastErrorR = 0;
+    private double integralR = 0;
+    private ElapsedTime pidTimer = new ElapsedTime(); // A single timer for both is fine
 
-    // --- Flywheel State ---
-    private double  targetRPM   = 0;   // Default to 0 RPM (off)
-    private boolean flywheelOn  = false;
+    private double targetRPM = 0;
+    private boolean flywheelOn = false;
 
     // --- Constructor ---
     public VoltageFlywheelController(HardwareMap hardwareMap) {
-        flywheel_Left  = hardwareMap.get(DcMotorEx.class, "flywheel_Left");
+        flywheel_Left = hardwareMap.get(DcMotorEx.class, "flywheel_Left");
         flywheel_Right = hardwareMap.get(DcMotorEx.class, "flywheel_Right");
 
         flywheel_Left.setDirection(LEFT_DIR);
@@ -56,24 +57,26 @@ public class VoltageFlywheelController {
         // Grab the robot's battery voltage sensor (first available)
         batteryVoltageSensor = hardwareMap.voltageSensor.iterator().next();
 
-        pidTimer.reset();
+        // pidTimer.reset(); // Initial reset can be here, or at start of update() loop
+        // Current setup resets at start of update(), which is fine.
     }
 
     // --- Methods to Control the Flywheel ---
     public void setFlywheelTargetRPM(double rpm) {
-        this.targetRPM = rpm;
+        this.targetRPM = Math.max(0, rpm); // Ensure target RPM is never negative
     }
 
     public void turnFlywheelOn() {
-        flywheelOn = true;
-        // When turning on, ensure a target is set. You might want a default.
-        if (this.targetRPM == 0) this.targetRPM = 3000; // Example default
+        // Only turn on if a meaningful target is set (e.g., not 0 or very small)
+        if (this.targetRPM > 100) { // Set a minimum RPM to consider "on"
+            flywheelOn = true;
+        }
     }
 
     public void turnFlywheelOff() {
         flywheelOn = false;
         targetRPM = 0;
-        setFlywheelPower(0, 0);
+        // setFlywheelPower(0, 0); // No need for this, update() handles it
         resetPIDState();
     }
 
@@ -85,9 +88,14 @@ public class VoltageFlywheelController {
     public void update() {
         double targetTPS = (targetRPM / 60.0) * TICKS_PER_REVOLUTION;
 
+        // Reset the timer ONCE per update cycle for accurate dt for BOTH motors
+        pidTimer.reset();
+
         if (flywheelOn && targetRPM > 0) {
-            double powerL = calculatePIDF(flywheel_Left,  targetTPS, lastErrorL, integralL, true);
-            double powerR = calculatePIDF(flywheel_Right, targetTPS, lastErrorR, integralR, false);
+            // Calculate for left motor, which will update this.lastErrorL and this.integralL
+            double powerL = calculatePIDF(flywheel_Left, targetTPS, true);
+            // Calculate for right motor, which will update this.lastErrorR and this.integralR
+            double powerR = calculatePIDF(flywheel_Right, targetTPS, false);
             setFlywheelPower(powerL, powerR);
         } else {
             setFlywheelPower(0, 0);
@@ -100,61 +108,73 @@ public class VoltageFlywheelController {
         flywheel_Right.setPower(powerR);
     }
 
-    private double calculatePIDF(DcMotorEx motor,
-                                 double targetTPS,
-                                 double lastError,
-                                 double integralSum,
-                                 boolean isLeftMotor) {
+    // Removed lastError and integralSum parameters
+    private double calculatePIDF(DcMotorEx motor, double targetTPS, boolean isLeftMotor) {
 
-        double dt = pidTimer.seconds();
-        if (dt <= 0) dt = 1e-3;   // safety so we never divide by zero
-        pidTimer.reset();
+        double dt = pidTimer.seconds(); // dt is now time since the START of the update cycle
+        if (dt <= 0) dt = 1e-3;
 
-        // Velocity sign is kept consistent with your original code
-        double currentTPS = -motor.getVelocity();
+        // Get the correct state variables for this motor (left or right)
+        double currentLastError;
+        double currentIntegralSum;
+
+        if (isLeftMotor) {
+            currentLastError = this.lastErrorL;
+            currentIntegralSum = this.integralL;
+        } else {
+            currentLastError = this.lastErrorR;
+            currentIntegralSum = this.integralR;
+        }
+
+        double currentTPS = -motor.getVelocity(); // Velocity sign consistent with your code
         double error = targetTPS - currentTPS;
 
-        // --- NEW: voltage compensation for feedforward ---
+        // --- Voltage Compensation ---
         double currentBatteryVoltage = (batteryVoltageSensor != null)
                 ? batteryVoltageSensor.getVoltage()
-                : NOMINAL_VOLTAGE; // fallback if sensor is null
+                : NOMINAL_VOLTAGE;
         double voltageMultiplier = NOMINAL_VOLTAGE / Math.max(currentBatteryVoltage, 1.0);
 
-        // FF was: targetTPS * kF;
-        // Now we scale for voltage so RPM stays more consistent across battery levels.
-        double feedforward   = (targetTPS * kF) * voltageMultiplier;
-        double proportional  = error * kP;
+        double feedforward = (targetTPS * kF) * voltageMultiplier;
+        double proportional = error * kP;
 
-        // Integral term (same logic as your original)
+        // --- IMPROVED INTEGRAL ANTI-WINDUP ---
+        // Only accumulate integral if within a reasonable error range AND motor is not saturated
+        // AND not hugely over target speed.
         if (Math.abs(error) > 50 && Math.abs(currentTPS) < targetTPS * 1.1) {
-            integralSum += error * dt;
+            currentIntegralSum += error * dt;
+            // Anti-windup: Limit the integral sum directly, relative to kI
+            // (e.g., allow integral term to contribute up to 0.5 power)
+            double maxIntegralSum = 0.5 / (kI == 0 ? 1 : kI); // Avoid division by zero if kI is 0
+            currentIntegralSum = Range.clip(currentIntegralSum, -maxIntegralSum, maxIntegralSum);
+        } else {
+            // Decay integral if error is too small or too large, or if PID is off
+            currentIntegralSum *= 0.95; // Decay rate
         }
-        double maxIntegralContribution = 0.15;
-        double integralTerm = Range.clip(integralSum * kI,
-                -maxIntegralContribution,
-                maxIntegralContribution);
+        double integralTerm = currentIntegralSum * kI;
 
-        double derivative    = (error - lastError) / dt;
+        double derivative = (error - currentLastError) / dt;
         double derivativeTerm = derivative * kD;
 
-        // Store state back into the appropriate side
+        double totalPower = feedforward + proportional + integralTerm + derivativeTerm;
+
+        // Store the updated state variables back into the class fields
         if (isLeftMotor) {
             this.lastErrorL = error;
-            this.integralL  = integralSum;
+            this.integralL = currentIntegralSum;
         } else {
             this.lastErrorR = error;
-            this.integralR  = integralSum;
+            this.integralR = currentIntegralSum;
         }
 
-        double totalPower = feedforward + proportional + integralTerm + derivativeTerm;
         return Range.clip(totalPower, 0.0, 1.0);
     }
 
     private void resetPIDState() {
         lastErrorL = 0;
         lastErrorR = 0;
-        integralL  = 0;
-        integralR  = 0;
+        integralL = 0;
+        integralR = 0;
         pidTimer.reset();
     }
 

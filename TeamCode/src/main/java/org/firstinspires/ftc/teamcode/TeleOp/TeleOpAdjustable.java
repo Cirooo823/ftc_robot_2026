@@ -19,15 +19,14 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-
-@TeleOp(name="TeleOpVisionPID", group="TeleOp")
-public class TeleOpVisionPID extends OpMode {
+@TeleOp(name="TeleOp with Adjustable RPM", group="TeleOp")
+public class TeleOpAdjustable extends OpMode {
 
     private VoltageFlywheelController flywheelController;
 
     private DcMotorEx right_b, left_f, right_f, left_b;
 
-    // ===== MECHANISMS =====
+    // ===== MECHANISISMS =====
     private DcMotorEx flywheel_Left, flywheel_Right;
     private DcMotor   intake;
     private CRServo   thirdStage;
@@ -35,7 +34,7 @@ public class TeleOpVisionPID extends OpMode {
     private double driverScale = 1.0;
 
     // ===== STATE =====
-    private boolean flywheelOn = false;
+    private boolean flywheelOn = false; // legacy flag, not strictly needed
     private boolean intakeOn   = false;
 
     // Edge detection (g1 intake toggles)
@@ -47,14 +46,18 @@ public class TeleOpVisionPID extends OpMode {
 
     private int thirdDir = 0;
 
-    // ===== PRESET RPMs (keep your current values) =====
+    // ===== PRESET RPMs =====
     private static final int PRESET_SHORT_RPM      = 3000; // gamepad2.X
-    private static final int PRESET_SHORT_MED_RPM  = 3200; // gamepad2 LB
+    private static final int PRESET_SHORT_MED_RPM  = 3100; // gamepad2 LB
     private static final int PRESET_MED_RPM        = 3400; // gamepad2.Y
-    private static final int PRESET_MED_LONG_RPM   = 3550; // gamepad2 RB
-    private static final int PRESET_LONG_RPM       = 4000; // gamepad2.B
+    private static final int PRESET_MED_LONG_RPM   = 3250; // gamepad2 RB
+    private static final int PRESET_LONG_RPM       = 3300; // gamepad2.B
 
-    // ===== VISION (from DistanceTesting) =====
+    // Fine adjust step and minimum
+    private static final int RPM_STEP = 50;
+    private static final int MIN_RPM  = 500;
+
+    // ===== VISION =====
     private VisionPortal      visionPortal;
     private AprilTagProcessor tagProcessor;
     private boolean           visionConfigured = false;  // to set exposure/gain once
@@ -62,7 +65,7 @@ public class TeleOpVisionPID extends OpMode {
     // Last seen tag info (for telemetry continuity)
     private int    lastTagId    = -1;
     private double lastTagRange = 0.0;
-    private double lastYaw = 0.0;
+    private double lastYaw      = 0.0;
 
     @Override
     public void init() {
@@ -105,7 +108,7 @@ public class TeleOpVisionPID extends OpMode {
         thirdStage = hardwareMap.get(CRServo.class, "thirdStage");
         thirdStage.setPower(0.0);
 
-        // ===== VISION INIT (similar to DistanceTesting) =====
+        // ===== VISION INIT =====
         tagProcessor = new AprilTagProcessor.Builder()
                 .setDrawAxes(true)
                 .setDrawCubeProjection(true)
@@ -138,7 +141,7 @@ public class TeleOpVisionPID extends OpMode {
         runThirdStage();
         runIntake();
 
-        // ===== VISION UPDATE (tag id + range) =====
+        // ===== VISION UPDATE =====
         updateTagTelemetry();
 
         // ===== FLYWHEEL UPDATE & TELEMETRY =====
@@ -157,12 +160,11 @@ public class TeleOpVisionPID extends OpMode {
         telemetry.update();
     }
 
-    // ===================== VISION CONFIG (called from loop) =====================
+    // ===================== VISION CONFIG =====================
     private void configureVisionIfReady() {
         if (visionPortal == null || visionConfigured) return;
 
         if (visionPortal.getCameraState() == VisionPortal.CameraState.STREAMING) {
-            // Safe to access controls now
             ExposureControl exposureControl =
                     (ExposureControl) visionPortal.getCameraControl(ExposureControl.class);
             if (exposureControl != null && exposureControl.isExposureSupported()) {
@@ -196,11 +198,11 @@ public class TeleOpVisionPID extends OpMode {
             AprilTagDetection tag = detections.get(0);
 
             double range = tag.ftcPose.range;  // distance from camera → tag center
-            double yaw = tag.ftcPose.yaw;
+            double yaw   = tag.ftcPose.yaw;
 
             lastTagId    = tag.id;
             lastTagRange = range;
-            lastYaw = yaw;
+            lastYaw      = yaw;
 
             telemetry.addData("Tag ID", tag.id);
             telemetry.addData("Range (in)", "%.2f", range);
@@ -217,46 +219,66 @@ public class TeleOpVisionPID extends OpMode {
 
     // ===================== FLYWHEEL =====================
     private void runFlywheel() {
-        boolean x2 = gamepad2.x;
+        // ---- Preset buttons ----
+        boolean x2  = gamepad2.x;
+        boolean y2  = gamepad2.y;
+        boolean b2  = gamepad2.b;
+        boolean lb2 = gamepad2.left_bumper;
+        boolean rb2 = gamepad2.right_bumper;
+        boolean a2  = gamepad2.a;
+
         if (x2 && !prevX2) {
-            flywheelController.turnFlywheelOn();
-            flywheelController.setFlywheelTargetRPM(PRESET_SHORT_RPM);
+            setFlywheelPreset(PRESET_SHORT_RPM);
         }
         prevX2 = x2;
 
-        boolean y2 = gamepad2.y;
         if (y2 && !prevY2) {
-            flywheelController.turnFlywheelOn();
-            flywheelController.setFlywheelTargetRPM(PRESET_MED_RPM);
+            setFlywheelPreset(PRESET_MED_RPM);
         }
         prevY2 = y2;
 
-        boolean b2 = gamepad2.b;
         if (b2 && !prevB2) {
-            flywheelController.turnFlywheelOn();
-            flywheelController.setFlywheelTargetRPM(PRESET_LONG_RPM);
+            setFlywheelPreset(PRESET_LONG_RPM);
         }
         prevB2 = b2;
 
-        boolean lb2 = gamepad2.left_bumper;
         if (lb2 && !prevLB2) {
-            flywheelController.turnFlywheelOn();
-            flywheelController.setFlywheelTargetRPM(PRESET_SHORT_MED_RPM);
+            setFlywheelPreset(PRESET_SHORT_MED_RPM);
         }
         prevLB2 = lb2;
 
-        boolean rb2 = gamepad2.right_bumper;
         if (rb2 && !prevRB2) {
-            flywheelController.turnFlywheelOn();
-            flywheelController.setFlywheelTargetRPM(PRESET_MED_LONG_RPM);
+            setFlywheelPreset(PRESET_MED_LONG_RPM);
         }
         prevRB2 = rb2;
 
-        boolean a2 = gamepad2.a;
+        // A turns flywheel off
         if (a2 && !prevA2) {
             flywheelController.turnFlywheelOff();
         }
         prevA2 = a2;
+
+        // ---- Adjust RPM only when flywheel is ON ----
+        boolean du2 = gamepad2.dpad_up;
+        if (du2 && !prevDU && flywheelController.isFlywheelOn()) {
+            double newTarget = flywheelController.getTargetRPM() + RPM_STEP;
+            flywheelController.setFlywheelTargetRPM(newTarget);
+        }
+        prevDU = du2;
+
+        boolean dd2 = gamepad2.dpad_down;
+        if (dd2 && !prevDD && flywheelController.isFlywheelOn()) {
+            double newTarget = flywheelController.getTargetRPM() - RPM_STEP;
+            if (newTarget < MIN_RPM) newTarget = MIN_RPM;
+            flywheelController.setFlywheelTargetRPM(newTarget);
+        }
+        prevDD = dd2;
+    }
+
+    // Helper so all presets behave identically
+    private void setFlywheelPreset(int rpm) {
+        flywheelController.setFlywheelTargetRPM(rpm);
+        flywheelController.turnFlywheelOn();
     }
 
     // ===================== DRIVE =====================
@@ -302,7 +324,6 @@ public class TeleOpVisionPID extends OpMode {
 
         intake.setPower(intakePower);
     }
-
 
     // ===================== THIRD STAGE (CR SERVO) =====================
     private void runThirdStage() {
