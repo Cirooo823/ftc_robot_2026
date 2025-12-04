@@ -25,8 +25,8 @@ public class VoltageFlywheelController {
     private final double TICKS_PER_REVOLUTION = 28.0; // Correct for GoBilda 5203 1:1
 
     // --- PIDF COEFFICIENTS (your tuned values) ---
-    public static double kF = 0.00036; // YOUR TUNED kF
-    public static double kP = 0.00008;  // YOUR TUNED kP
+    public static double kF = 0.00041; // YOUR TUNED kF
+    public static double kP = 0.0001;  // YOUR TUNED kP
     public static double kI = 0.0;      // Likely remains 0.0
     public static double kD = 0.0;      // Likely remains 0.0
 

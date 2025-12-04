@@ -54,7 +54,7 @@ public class TeleOpVisionPID extends OpMode {
     private static final int PRESET_SHORT_MED_RPM  = 3200; // gamepad2 LB
     private static final int PRESET_MED_RPM        = 3400; // gamepad2.Y
     private static final int PRESET_MED_LONG_RPM   = 3550; // gamepad2 RB
-    private static final int PRESET_LONG_RPM       = 3700; // gamepad2.B
+    private static final int PRESET_LONG_RPM       = 4000; // gamepad2.B
 
     // ===== VISION (from DistanceTesting) =====
     private VisionPortal      visionPortal;
