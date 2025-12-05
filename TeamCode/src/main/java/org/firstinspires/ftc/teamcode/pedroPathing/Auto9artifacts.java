@@ -10,8 +10,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
 
-@Autonomous(name = "Auto12artifacts", group = "Autos")
-public class Auto12artifacts extends OpMode {
+@Autonomous(name = "Auto9artifacts", group = "Autos")
+public class Auto9artifacts extends OpMode {
 
 
     private Follower follower;
@@ -31,13 +31,14 @@ public class Auto12artifacts extends OpMode {
     private final Pose pickupfarPose = new Pose(19.882781982421875, 84.19023757684427, Math.toRadians(180)); //
     private final Pose shootclosePose = new Pose(49.967213114754095, 102.68852459016394, Math.toRadians(137)); //
     private final Pose leavefarPose = new Pose(37.37704918032787, 90.29508196721311, Math.toRadians(137)); //
+    private final Pose leaveclosePose = new Pose(37.37704918032787, 90.29508196721311, Math.toRadians(137)); //
 
 
     private PathChain scorepreload;
     private PathChain faceartifactsclose, pickupartifactsclose, shootartifactsclose;
     private PathChain faceartifactsmiddle, pickupartifactsmiddle, shootartifctsmiddle;
     private PathChain faceartifactsfar, pickupartifactsfar, shootartifactsfar;
-    private PathChain leavezone;
+    private PathChain leaveclose;
     public void buildPaths() {
         scorepreload = follower.pathBuilder()
                 .addPath(new BezierLine(startPose, shootfarPose))
@@ -99,39 +100,13 @@ public class Auto12artifacts extends OpMode {
                 .build();
 
 
-        faceartifactsfar = follower
+        leaveclose = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(57, 19.672), new Pose(38.951, 80.5))
+                        new BezierLine(new Pose(57.000, 19.672), new Pose(54.885, 24.984))
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(113), Math.toRadians(180))
+                .setLinearHeadingInterpolation(Math.toRadians(113), Math.toRadians(130))
                 .build();
-
-
-        pickupartifactsfar = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(38.951, 80.500), new Pose(19.883, 80.500))
-                )
-                .setTangentHeadingInterpolation()
-                .build();
-
-
-        shootartifactsfar = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(19.883, 80.500), new Pose(49.967, 102.689))
-                )
-                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(137))
-                .build();
-
-
-        leavezone = follower
-                .pathBuilder()
-                .addPath(new BezierLine(new Pose(49.967, 102.689), new Pose(37.377, 90.295)))
-                .setLinearHeadingInterpolation(Math.toRadians(137), Math.toRadians(225))
-                .build();
-
 
     }
 
@@ -178,32 +153,13 @@ public class Auto12artifacts extends OpMode {
                     follower.followPath(shootartifctsmiddle, true);
                     setPathState(7);
                 }
-                break;
             case 7:
                 if(!follower.isBusy() && pathTimer.getElapsedTimeSeconds() > 5) {
-                    follower.followPath(faceartifactsfar, true);
+                    follower.followPath(leaveclose, true);
                     setPathState(8);
                 }
                 break;
             case 8:
-                if(!follower.isBusy()) {
-                    follower.followPath(pickupartifactsfar, true);
-                    setPathState(9);
-                }
-                break;
-            case 9:
-                if(!follower.isBusy()) {
-                    follower.followPath(shootartifactsfar, true);
-                    setPathState(10);
-                }
-                break;
-            case 10:
-                if(!follower.isBusy() && pathTimer.getElapsedTimeSeconds() > 5) {
-                    follower.followPath(leavezone, true);
-                    setPathState(11);
-                }
-                break;
-            case 11:
                 if(!follower.isBusy()) {
                     setPathState(-1);
                 }
