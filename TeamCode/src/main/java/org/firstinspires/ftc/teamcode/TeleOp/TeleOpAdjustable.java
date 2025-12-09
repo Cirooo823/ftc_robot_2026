@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Gamepad;   // <-- added
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
@@ -26,7 +27,7 @@ public class TeleOpAdjustable extends OpMode {
 
     private DcMotorEx right_b, left_f, right_f, left_b;
 
-    // ===== MECHANISISMS =====
+    // ===== MECHANISMS =====
     private DcMotorEx flywheel_Left, flywheel_Right;
     private DcMotor   intake;
     private CRServo   thirdStage;
@@ -41,31 +42,55 @@ public class TeleOpAdjustable extends OpMode {
     private boolean prevA = false, prevX = false;
     private boolean prevDU = false, prevDD = false, prevDL = false, prevDR = false;
 
-    // gamepad2 preset button edges
-    private boolean prevA2 = false, prevX2 = false, prevY2 = false, prevB2 = false, prevLB2 = false, prevRB2 = false;
+    // gamepad2 button edges
+    private boolean prevA2  = false;
+    private boolean prevX2  = false;
+    private boolean prevY2  = false;
+    private boolean prevB2  = false;
+    private boolean prevLB2 = false;
+    private boolean prevRB2 = false;
+    private boolean prevLT2 = false;
+    private boolean prevRT2 = false;
+    private boolean prevLSB2 = false;
 
     private int thirdDir = 0;
 
     // ===== PRESET RPMs =====
-    private static final int PRESET_SHORT_RPM      = 3000; // gamepad2.X
-    private static final int PRESET_SHORT_MED_RPM  = 3100; // gamepad2 LB
-    private static final int PRESET_MED_RPM        = 3400; // gamepad2.Y
-    private static final int PRESET_MED_LONG_RPM   = 3250; // gamepad2 RB
-    private static final int PRESET_LONG_RPM       = 3300; // gamepad2.B
+    private static final int PRESET_STALL      = 500; // (unused currently, can be bound later)
+    private static final int PRESET_SHORT_MED_RPM  = 3100; // gamepad2 left trigger
+    private static final int PRESET_MED_RPM        = 3400; // gamepad2 Y
+    private static final int PRESET_MED_LONG_RPM   = 3250; // gamepad2 right bumper
+    private static final int PRESET_LONG_RPM       = 3300; // gamepad2 right trigger
 
     // Fine adjust step and minimum
     private static final int RPM_STEP = 50;
     private static final int MIN_RPM  = 500;
 
+    // ===== FLYWHEEL READY-TO-SHOOT RUMBLE (gamepad2) =====
+    private static final double RPM_TOLERANCE = 50.0;
+    private boolean flywheelAtSpeed       = false;
+    private boolean flywheelReadyRumbled  = false;
+    private double  lastTargetRPM         = 0.0;
+
     // ===== VISION =====
     private VisionPortal      visionPortal;
     private AprilTagProcessor tagProcessor;
-    private boolean           visionConfigured = false;  // to set exposure/gain once
+    private boolean           visionConfigured = false;
 
     // Last seen tag info (for telemetry continuity)
-    private int    lastTagId    = -1;
-    private double lastTagRange = 0.0;
-    private double lastYaw      = 0.0;
+    private int    lastTagId     = -1;
+    private double lastTagRange  = 0.0;
+    private double lastYaw       = 0.0;
+    private double lastBearing   = 0.0;
+
+    // For current frame
+    private boolean tagVisible       = false;
+    private double  currentBearing   = 0.0;
+
+    // ===== AIM RUMBLE (gamepad1) WHEN ALIGNED TO TAG =====
+    // Bearing is how many degrees we must turn to point at the tag; 0 = directly at tag.
+    private static final double AIM_BEARING_TOL_DEG = 1.5;  // tune this tolerance
+    private boolean aimRumbleActive = false;
 
     @Override
     public void init() {
@@ -144,9 +169,16 @@ public class TeleOpAdjustable extends OpMode {
         // ===== VISION UPDATE =====
         updateTagTelemetry();
 
-        // ===== FLYWHEEL UPDATE & TELEMETRY =====
+        // ===== FLYWHEEL UPDATE =====
         flywheelController.update();
 
+        // flywheel ready rumble on gamepad2
+        updateFlywheelReadyRumble();
+
+        // NEW: aim-based rumble on gamepad1 when aligned to tag
+        updateAimRumble();
+
+        // ===== TELEMETRY =====
         telemetry.addLine();
         telemetry.addData("--- Flywheel ---", "");
         telemetry.addData("Flywheel State", flywheelController.isFlywheelOn() ? "ACTIVE" : "OFF");
@@ -157,6 +189,14 @@ public class TeleOpAdjustable extends OpMode {
         telemetry.addData("Actual RPM Right", "%.0f", flywheelController.getCurrentRPM_Right());
         telemetry.addData("Battery Voltage", "%.2f", flywheelController.getBatteryVoltage());
 
+        telemetry.addLine();
+        telemetry.addData("--- Aim Assist ---", "");
+        telemetry.addData("Tag Visible", tagVisible);
+        telemetry.addData("Last Tag ID", lastTagId);
+        telemetry.addData("Last Range (in)", "%.2f", lastTagRange);
+        telemetry.addData("Last Yaw (deg)", "%.2f", lastYaw);
+        telemetry.addData("Last Bearing (deg)", "%.2f", lastBearing);
+        telemetry.addData("Aim Aligned", aimRumbleActive);
         telemetry.update();
     }
 
@@ -183,102 +223,197 @@ public class TeleOpAdjustable extends OpMode {
         }
     }
 
-    // ===================== VISION TELEMETRY =====================
+    // ===================== VISION TELEMETRY & AIM DATA =====================
     private void updateTagTelemetry() {
         if (tagProcessor == null) {
             telemetry.addLine("--- Vision ---");
             telemetry.addLine("Tag processor not initialized");
+            tagVisible = false;
             return;
         }
 
         List<AprilTagDetection> detections = tagProcessor.getDetections();
 
         telemetry.addLine("--- Vision (AprilTag) ---");
+
         if (!detections.isEmpty()) {
-            AprilTagDetection tag = detections.get(0);
+            // Choose the closest tag as the target (simple heuristic)
+            AprilTagDetection bestTag = null;
+            double bestRange = Double.MAX_VALUE;
 
-            double range = tag.ftcPose.range;  // distance from camera → tag center
-            double yaw   = tag.ftcPose.yaw;
+            for (AprilTagDetection det : detections) {
+                double r = det.ftcPose.range;
+                if (r < bestRange) {
+                    bestRange = r;
+                    bestTag = det;
+                }
+            }
 
-            lastTagId    = tag.id;
-            lastTagRange = range;
-            lastYaw      = yaw;
+            AprilTagDetection tag = bestTag;
+
+            double range   = tag.ftcPose.range;    // distance from camera to tag center
+            double yaw     = tag.ftcPose.yaw;      // rotation of tag around Z (face-on)
+            double bearing = tag.ftcPose.bearing;  // how many degrees camera must turn to point at tag
+
+            lastTagId     = tag.id;
+            lastTagRange  = range;
+            lastYaw       = yaw;
+            lastBearing   = bearing;
+
+            tagVisible     = true;
+            currentBearing = bearing;
 
             telemetry.addData("Tag ID", tag.id);
             telemetry.addData("Range (in)", "%.2f", range);
-            telemetry.addData("Yaw", "%.2f", yaw);
+            telemetry.addData("Yaw (deg)", "%.2f", yaw);
+            telemetry.addData("Bearing (deg)", "%.2f", bearing);
         } else {
             telemetry.addLine("No tags detected");
+            tagVisible = false;
+
             if (lastTagId != -1) {
                 telemetry.addData("Last Tag ID", lastTagId);
                 telemetry.addData("Last Range (in)", "%.2f", lastTagRange);
-                telemetry.addData("Last Yaw", "%.2f", lastYaw);
+                telemetry.addData("Last Yaw (deg)", "%.2f", lastYaw);
+                telemetry.addData("Last Bearing (deg)", "%.2f", lastBearing);
             }
         }
     }
 
     // ===================== FLYWHEEL =====================
     private void runFlywheel() {
-        // ---- Preset buttons ----
+        // ---- Inputs ----
         boolean x2  = gamepad2.x;
         boolean y2  = gamepad2.y;
         boolean b2  = gamepad2.b;
         boolean lb2 = gamepad2.left_bumper;
         boolean rb2 = gamepad2.right_bumper;
         boolean a2  = gamepad2.a;
+        boolean lsb2 = gamepad2.left_stick_button;
 
-        if (x2 && !prevX2) {
-            setFlywheelPreset(PRESET_SHORT_RPM);
-        }
-        prevX2 = x2;
+        // triggers as digital edges (pressed if > 0.5)
+        double ltVal = gamepad2.left_trigger;
+        double rtVal = gamepad2.right_trigger;
+        boolean lt2  = ltVal > 0.5;
+        boolean rt2  = rtVal > 0.5;
 
+        // ---- Presets ----
+        // medium preset (3400) on Y
         if (y2 && !prevY2) {
             setFlywheelPreset(PRESET_MED_RPM);
         }
         prevY2 = y2;
 
-        if (b2 && !prevB2) {
-            setFlywheelPreset(PRESET_LONG_RPM);
-        }
-        prevB2 = b2;
-
-        if (lb2 && !prevLB2) {
-            setFlywheelPreset(PRESET_SHORT_MED_RPM);
-        }
-        prevLB2 = lb2;
-
+        // med-long preset (3250) on right bumper
         if (rb2 && !prevRB2) {
             setFlywheelPreset(PRESET_MED_LONG_RPM);
         }
         prevRB2 = rb2;
 
+        // short-medium preset (3100) on left trigger
+        if (lt2 && !prevLT2) {
+            setFlywheelPreset(PRESET_SHORT_MED_RPM);
+        }
+        prevLT2 = lt2;
+
+        // long preset (3300) on right trigger
+        if (rt2 && !prevRT2) {
+            setFlywheelPreset(PRESET_LONG_RPM);
+        }
+        prevRT2 = rt2;
+
+        // (Left bumper currently unused; keep edge updated)
+        prevLB2 = lb2;
+
         // A turns flywheel off
         if (a2 && !prevA2) {
-            flywheelController.turnFlywheelOff();
+            setFlywheelPreset(PRESET_STALL);
         }
         prevA2 = a2;
 
+        if (lsb2 && !prevLSB2) {
+            flywheelController.turnFlywheelOff();
+        }
+        prevLSB2 = lsb2;
+
         // ---- Adjust RPM only when flywheel is ON ----
-        boolean du2 = gamepad2.dpad_up;
-        if (du2 && !prevDU && flywheelController.isFlywheelOn()) {
+        // B = increase target, X = decrease target
+        if (b2 && !prevB2 && flywheelController.isFlywheelOn()) {
             double newTarget = flywheelController.getTargetRPM() + RPM_STEP;
             flywheelController.setFlywheelTargetRPM(newTarget);
         }
-        prevDU = du2;
 
-        boolean dd2 = gamepad2.dpad_down;
-        if (dd2 && !prevDD && flywheelController.isFlywheelOn()) {
+        if (x2 && !prevX2 && flywheelController.isFlywheelOn()) {
             double newTarget = flywheelController.getTargetRPM() - RPM_STEP;
             if (newTarget < MIN_RPM) newTarget = MIN_RPM;
             flywheelController.setFlywheelTargetRPM(newTarget);
         }
-        prevDD = dd2;
+
+        // update edges for X/B after using them
+        prevX2 = x2;
+        prevB2 = b2;
     }
 
     // Helper so all presets behave identically
     private void setFlywheelPreset(int rpm) {
         flywheelController.setFlywheelTargetRPM(rpm);
         flywheelController.turnFlywheelOn();
+    }
+
+    // ===================== READY-TO-SHOOT RUMBLE LOGIC (gamepad2) =====================
+    private void updateFlywheelReadyRumble() {
+        double target = flywheelController.getTargetRPM();
+
+        // If flywheel is off or target is zero/invalid, clear state
+        if (!flywheelController.isFlywheelOn() || target <= 0.0) {
+            flywheelAtSpeed      = false;
+            flywheelReadyRumbled = false;
+            lastTargetRPM        = target;
+            return;
+        }
+
+        // If the target RPM changed, allow a new rumble when we next reach speed
+        if (target != lastTargetRPM) {
+            flywheelAtSpeed      = false;
+            flywheelReadyRumbled = false;
+        }
+
+        double errL = Math.abs(flywheelController.getErrorRPM_Left());
+        double errR = Math.abs(flywheelController.getErrorRPM_Right());
+        boolean atSpeedNow = (errL <= RPM_TOLERANCE) && (errR <= RPM_TOLERANCE);
+
+        // Fire rumble once when we newly enter the "ready" band for this target
+        if (atSpeedNow && !flywheelAtSpeed && !flywheelReadyRumbled) {
+            if (gamepad2 != null) {
+                gamepad2.rumbleBlips(1);
+            }
+            flywheelReadyRumbled = true;
+        }
+
+        flywheelAtSpeed = atSpeedNow;
+        lastTargetRPM   = target;
+    }
+
+    // ===================== AIM RUMBLE LOGIC (gamepad1) =====================
+    private void updateAimRumble() {
+        boolean flywheelActive = flywheelController.isFlywheelOn();
+        boolean alignedToTag   = flywheelActive
+                && tagVisible
+                && Math.abs(currentBearing) <= AIM_BEARING_TOL_DEG;
+
+        if (alignedToTag && !aimRumbleActive) {
+            // Start continuous rumble on gamepad1 until we explicitly stop it
+            if (gamepad1 != null) {
+                gamepad1.rumble(0.7, 0.7, Gamepad.RUMBLE_DURATION_CONTINUOUS);
+            }
+            aimRumbleActive = true;
+        } else if (!alignedToTag && aimRumbleActive) {
+            // We are no longer aligned or the flywheel turned off; stop rumble
+            if (gamepad1 != null) {
+                gamepad1.stopRumble();
+            }
+            aimRumbleActive = false;
+        }
     }
 
     // ===================== DRIVE =====================
@@ -355,6 +490,10 @@ public class TeleOpAdjustable extends OpMode {
         flywheel_Right.setVelocity(0);
         intake.setPower(0);
         thirdStage.setPower(0.0);
+
+        // Make sure all rumbles are off when OpMode ends
+        if (gamepad1 != null) gamepad1.stopRumble();
+        if (gamepad2 != null) gamepad2.stopRumble();
 
         if (visionPortal != null) {
             visionPortal.close();
