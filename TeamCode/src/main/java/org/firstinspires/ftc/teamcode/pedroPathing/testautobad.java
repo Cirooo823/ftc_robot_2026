@@ -9,13 +9,21 @@ import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
+import org.firstinspires.ftc.teamcode.TeleOp.VoltageFlywheelController;
+
 
 @Autonomous(name = "Auto9artifacts", group = "Autos")
-public class Auto9artifacts extends OpMode {
+public class testautobad extends OpMode {
 
+    private VoltageFlywheelController flywheelController;
 
     private Follower follower;
     private Timer pathTimer, actionTimer, opmodeTimer;
+
+    // --------FLYWHEEL LOGIC --------
+    private FlywheelLogic shooter = new FlywheelLogic();
+    private boolean shotsTriggered = false;
+
     private int pathState;
 
 
@@ -119,10 +127,18 @@ public class Auto9artifacts extends OpMode {
                 break;
             case 1:
                 //time elapsed 5 secs
-                if(!follower.isBusy() && pathTimer.getElapsedTimeSeconds() > 5) {
-                    follower.followPath(faceartifactsclose,true);
-                    setPathState(2);
+                if (!follower.isBusy()) {
+                    if (!shotsTriggered) {
+                        shooter.fireShots(3);
+                        shotsTriggered = true;
+                    }
+                    else if (shotsTriggered && !shooter.isBusy()){
+                        //shots are done, free to transition
+                        follower.followPath(faceartifactsclose,true);
+                        setPathState(2);
+                    }
                 }
+
                 break;
             case 2:
                 if(!follower.isBusy()) {
@@ -169,13 +185,17 @@ public class Auto9artifacts extends OpMode {
     public void setPathState(int pState) {
         pathState = pState;
         pathTimer.resetTimer();
+
+        shotsTriggered = false;
     }
 
     /** This is the main loop of the OpMode, it will run repeatedly after clicking "Play". **/
     @Override
     public void loop() {
+        flywheelController.update();
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
+        shooter.update();
         autonomousPathUpdate();
         // Feedback to Driver Hub for debugging
         telemetry.addData("path state", pathState);
@@ -187,10 +207,14 @@ public class Auto9artifacts extends OpMode {
     /** This method is called once at the init of the OpMode. **/
     @Override
     public void init() {
+        flywheelController=new VoltageFlywheelController(hardwareMap);
         pathTimer = new Timer();
         opmodeTimer = new Timer();
         opmodeTimer.resetTimer();
         follower = Constants.createFollower(hardwareMap);
+
+        shooter.init(hardwareMap);
+
         buildPaths();
         follower.setStartingPose(startPose);
     }

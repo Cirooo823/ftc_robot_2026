@@ -9,10 +9,13 @@ import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
+import org.firstinspires.ftc.teamcode.TeleOp.VoltageFlywheelController;
+
 
 @Autonomous(name = "Auto12artifacts", group = "Autos")
 public class Auto12artifacts extends OpMode {
 
+    private VoltageFlywheelController flywheelController;
 
     private Follower follower;
     private Timer pathTimer, actionTimer, opmodeTimer;
@@ -218,6 +221,7 @@ public class Auto12artifacts extends OpMode {
     /** This is the main loop of the OpMode, it will run repeatedly after clicking "Play". **/
     @Override
     public void loop() {
+        flywheelController.update();
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
         autonomousPathUpdate();
@@ -231,6 +235,7 @@ public class Auto12artifacts extends OpMode {
     /** This method is called once at the init of the OpMode. **/
     @Override
     public void init() {
+        flywheelController=new VoltageFlywheelController(hardwareMap);
         pathTimer = new Timer();
         opmodeTimer = new Timer();
         opmodeTimer.resetTimer();

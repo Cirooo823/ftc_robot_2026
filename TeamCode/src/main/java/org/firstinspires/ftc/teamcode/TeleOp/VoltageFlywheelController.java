@@ -203,4 +203,15 @@ public class VoltageFlywheelController { // Retaining Warriors' class name
     public double getBatteryVoltage() {
         return (batteryVoltageSensor != null) ? batteryVoltageSensor.getVoltage() : 0.0;
     }
+    public double getCurrentRPM_Average() {
+        // Get velocities from both motors
+        double velL = -flywheel_Left.getVelocity(); // Note: negative sign matches your logic
+        double velR = -flywheel_Right.getVelocity();
+
+        // Average them (using absolute value just to be safe about direction)
+        double averageTPS = (Math.abs(velL) + Math.abs(velR)) / 2.0;
+
+        // Convert Ticks Per Second to RPM
+        return (averageTPS / TICKS_PER_REVOLUTION) * 60.0;
+    }
 }
