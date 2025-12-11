@@ -37,7 +37,7 @@ public class Auto9artifactsRED extends OpMode {
                 .addPath(
                         new BezierLine(new Pose(87.000, 9.000), new Pose(88.000, 21.000))
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(68))
+                .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(65))
                 .build();
 
         faceartifactsclose = follower
@@ -45,7 +45,7 @@ public class Auto9artifactsRED extends OpMode {
                 .addPath(
                         new BezierLine(new Pose(88.000, 21.000), new Pose(98.000, 35.000))
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(65), Math.toRadians(0))
                 .build();
 
         pickupartifactsclose = follower
@@ -61,21 +61,21 @@ public class Auto9artifactsRED extends OpMode {
                 .addPath(
                         new BezierLine(new Pose(133.000, 35.000), new Pose(88.000, 21.000))
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(68))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(67))
                 .build();
 
         faceartifactsmiddle = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(88.000, 21.000), new Pose(98.000, 60.000))
+                        new BezierLine(new Pose(88.000, 21.000), new Pose(98.000, 58.000))
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(67), Math.toRadians(0))
                 .build();
 
         pickupartifactsmiddle = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(98.000, 60.000), new Pose(133.000, 60.000))
+                        new BezierLine(new Pose(98.000, 58.000), new Pose(133.000, 58.000))
                 )
                 .setTangentHeadingInterpolation()
                 .build();
@@ -83,9 +83,9 @@ public class Auto9artifactsRED extends OpMode {
         shootartifactsmiddle = follower
                 .pathBuilder()
                 .addPath(
-                        new BezierLine(new Pose(133.000, 60.000), new Pose(88.000, 21.000))
+                        new BezierLine(new Pose(133.000, 58.000), new Pose(88.000, 21.000))
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(68))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(67))
                 .build();
 
         facegate = follower
@@ -93,7 +93,7 @@ public class Auto9artifactsRED extends OpMode {
                 .addPath(
                         new BezierLine(new Pose(88.000, 21.000), new Pose(120.000, 68.000))
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(68), Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(67), Math.toRadians(0))
                 .build();
     }
 

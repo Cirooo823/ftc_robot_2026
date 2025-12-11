@@ -27,7 +27,7 @@ public class FlywheelLogic {
     //------THIRD STAGE CONSTANTS-------
     private double THIRD_STAGE_ON_RPM = -200;
     private double THIRD_STAGE_OFF_RPM = 0;
-    private double THIRD_STAGE_ON_TIME = 5;
+    private double THIRD_STAGE_ON_TIME = 3; //was 5
     private double THIRD_STAGE_OFF_TIME = 0.2;
 
     //--------FLYWHEEL CONSTANTS-----------
