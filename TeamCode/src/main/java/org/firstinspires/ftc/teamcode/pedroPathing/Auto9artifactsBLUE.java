@@ -31,13 +31,13 @@ public class Auto9artifactsBLUE extends OpMode {
     private final Pose pickupfarPose = new Pose(19.882781982421875, 84.19023757684427, Math.toRadians(180));
     private final Pose shootclosePose = new Pose(49.967213114754095, 102.68852459016394, Math.toRadians(137));
     private final Pose leavefarPose = new Pose(37.37704918032787, 90.29508196721311, Math.toRadians(137));
-    private final Pose leaveclosePose = new Pose(37.37704918032787, 90.29508196721311, Math.toRadians(137));
+    private final Pose facegatePose = new Pose(37.37704918032787, 90.29508196721311, Math.toRadians(137));
 
     private PathChain scorepreload;
     private PathChain faceartifactsclose, pickupartifactsclose, shootartifactsclose;
     private PathChain faceartifactsmiddle, pickupartifactsmiddle, shootartifctsmiddle;
     private PathChain faceartifactsfar, pickupartifactsfar, shootartifactsfar;
-    private PathChain leaveclose;
+    private PathChain facegate;
 
     public void buildPaths() {
         scorepreload = follower.pathBuilder()
@@ -72,12 +72,12 @@ public class Auto9artifactsBLUE extends OpMode {
 
         shootartifctsmiddle = follower.pathBuilder()
                 .addPath(new BezierLine(new Pose(11, 56.1), new Pose(57, 19.475)))
-                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(114))
+                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(112))
                 .build();
 
-        leaveclose = follower.pathBuilder()
-                .addPath(new BezierLine(new Pose(57.000, 19.475), new Pose(54.885, 24.984)))
-                .setLinearHeadingInterpolation(Math.toRadians(114), Math.toRadians(130))
+        facegate = follower.pathBuilder()
+                .addPath(new BezierLine(new Pose(57.000, 19.475), new Pose(24, 68)))
+                .setLinearHeadingInterpolation(Math.toRadians(112), Math.toRadians(180))
                 .build();
     }
 
@@ -155,7 +155,7 @@ public class Auto9artifactsBLUE extends OpMode {
 
             case 10: // Wait for shooter -> Park
                 if (!shooter.isBusy()) {
-                    follower.followPath(leaveclose, true);
+                    follower.followPath(facegate, true);
                     setPathState(11);
                 }
                 break;
