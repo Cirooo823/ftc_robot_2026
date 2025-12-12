@@ -9,8 +9,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-@Autonomous(name = "Auto 9 artifacts RED", group = "Autos")
-public class Auto9artifactsRED extends OpMode {
+@Autonomous(name = "Far BLUE", group = "Autos")
+public class FarBLUE extends OpMode {
 
     // --- 1. CHANGE: Use the Logic Class ---
     private FlywheelLogic shooter;
@@ -21,79 +21,63 @@ public class Auto9artifactsRED extends OpMode {
     private int pathState;
 
     // --- POSES (Untouched) ---
+    private final Pose startPose = new Pose(56, 8, Math.toRadians(90));
+    private final Pose shootfarPose = new Pose(57, 19.475409836065573, Math.toRadians(112));
+    private final Pose facingartifactsclosePose = new Pose(42.295081967213115, 36, Math.toRadians(180));
+    private final Pose pickupclosePose = new Pose(19.672131147540984, 36, Math.toRadians(180));
+    private final Pose facingartifactsmiddlePose = new Pose(41.90163934426229, 59.60655737704917, Math.toRadians(180));
+    private final Pose pickupmiddlePose = new Pose(19.4098370661501, 59.672127145235656, Math.toRadians(180));
+    private final Pose facingartifactsfarPose = new Pose(38.95081967213115, 83.99999999999999, Math.toRadians(180));
+    private final Pose pickupfarPose = new Pose(19.882781982421875, 84.19023757684427, Math.toRadians(180));
+    private final Pose shootclosePose = new Pose(49.967213114754095, 102.68852459016394, Math.toRadians(137));
+    private final Pose leavefarPose = new Pose(37.37704918032787, 90.29508196721311, Math.toRadians(137));
+    private final Pose facegatePose = new Pose(37.37704918032787, 90.29508196721311, Math.toRadians(137));
 
-    private final Pose startPose = new Pose(87, 9, Math.toRadians(90));
-
-
-    private PathChain shootpreload;
+    private PathChain scorepreload;
     private PathChain faceartifactsclose, pickupartifactsclose, shootartifactsclose;
-    private PathChain faceartifactsmiddle, pickupartifactsmiddle, shootartifactsmiddle;
+    private PathChain faceartifactsmiddle, pickupartifactsmiddle, shootartifctsmiddle;
     private PathChain faceartifactsfar, pickupartifactsfar, shootartifactsfar;
     private PathChain facegate;
 
     public void buildPaths() {
-        shootpreload = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(87.000, 9.000), new Pose(88.000, 21.000))
-                )
-                .setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(65))
+        scorepreload = follower.pathBuilder()
+                .addPath(new BezierLine(startPose, shootfarPose))
+                .setLinearHeadingInterpolation(startPose.getHeading(), shootfarPose.getHeading())
                 .build();
 
-        faceartifactsclose = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(88.000, 21.000), new Pose(98.000, 35.000))
-                )
-                .setLinearHeadingInterpolation(Math.toRadians(65), Math.toRadians(0))
+        faceartifactsclose = follower.pathBuilder()
+                .addPath(new BezierLine(new Pose(57, 19.475), new Pose(41.902, 33)))
+                .setLinearHeadingInterpolation(Math.toRadians(112), Math.toRadians(180))
                 .build();
 
-        pickupartifactsclose = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(98.000, 35.000), new Pose(133.000, 35.000))
-                )
+        pickupartifactsclose = follower.pathBuilder()
+                .addPath(new BezierLine(new Pose(41.902, 33), new Pose(11, 33)))
                 .setTangentHeadingInterpolation()
                 .build();
 
-        shootartifactsclose = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(133.000, 35.000), new Pose(88.000, 21.000))
-                )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(67))
+        shootartifactsclose = follower.pathBuilder()
+                .addPath(new BezierLine(new Pose(11, 33), new Pose(57, 19.475)))
+                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(114))
                 .build();
 
-        faceartifactsmiddle = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(88.000, 21.000), new Pose(98.000, 58.000))
-                )
-                .setLinearHeadingInterpolation(Math.toRadians(67), Math.toRadians(0))
+        faceartifactsmiddle = follower.pathBuilder()
+                .addPath(new BezierLine(new Pose(57, 19.475), new Pose(41.902, 57)))
+                .setLinearHeadingInterpolation(Math.toRadians(114), Math.toRadians(180))
                 .build();
 
-        pickupartifactsmiddle = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(98.000, 58.000), new Pose(133.000, 58.000))
-                )
+        pickupartifactsmiddle = follower.pathBuilder()
+                .addPath(new BezierLine(new Pose(41.902, 57), new Pose(10, 57)))
                 .setTangentHeadingInterpolation()
                 .build();
 
-        shootartifactsmiddle = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(133.000, 58.000), new Pose(88.000, 21.000))
-                )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(67))
+        shootartifctsmiddle = follower.pathBuilder()
+                .addPath(new BezierLine(new Pose(10, 57), new Pose(57, 19.475)))
+                .setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(112))
                 .build();
 
-        facegate = follower
-                .pathBuilder()
-                .addPath(
-                        new BezierLine(new Pose(88.000, 21.000), new Pose(120.000, 68.000))
-                )
-                .setLinearHeadingInterpolation(Math.toRadians(67), Math.toRadians(0))
+        facegate = follower.pathBuilder()
+                .addPath(new BezierLine(new Pose(57.000, 19.475), new Pose(24, 70)))
+                .setLinearHeadingInterpolation(Math.toRadians(112), Math.toRadians(180))
                 .build();
     }
 
@@ -101,7 +85,7 @@ public class Auto9artifactsRED extends OpMode {
     public void autonomousPathUpdate() {
         switch (pathState) {
             case 0: // Drive to Shoot Preload
-                follower.followPath(shootpreload);
+                follower.followPath(scorepreload);
                 setPathState(1);
                 break;
 
@@ -157,7 +141,7 @@ public class Auto9artifactsRED extends OpMode {
 
             case 8: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
-                    follower.followPath(shootartifactsmiddle, true);
+                    follower.followPath(shootartifctsmiddle, true);
                     setPathState(9);
                 }
                 break;
