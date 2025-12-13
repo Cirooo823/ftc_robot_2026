@@ -2,14 +2,13 @@ package org.firstinspires.ftc.teamcode.TeleOp;
 
 import android.util.Size;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Gamepad;   // <-- added
+import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.robotcore.external.hardware.camera.WebcamName;
 import org.firstinspires.ftc.robotcore.external.hardware.camera.controls.ExposureControl;
@@ -20,9 +19,9 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-@Disabled
-@TeleOp(name="TeleOp with Adjustable RPM", group="TeleOp")
-public class TeleOpAdjustable extends OpMode {
+
+@TeleOp(name="TeleOp RED Adjustable RPM", group="TeleOp")
+public class TeleOpAdjustableRed extends OpMode {
 
     private VoltageFlywheelController flywheelController;
 
@@ -30,24 +29,24 @@ public class TeleOpAdjustable extends OpMode {
 
     // ===== MECHANISMS =====
     private DcMotorEx flywheel_Left, flywheel_Right;
-    private DcMotor   intake;
-    private CRServo   thirdStage;
+    private DcMotor intake;
+    private CRServo thirdStage;
 
     private double driverScale = 1.0;
 
     // ===== STATE =====
     private boolean flywheelOn = false; // legacy flag, not strictly needed
-    private boolean intakeOn   = false;
+    private boolean intakeOn = false;
 
     // Edge detection (g1 intake toggles)
     private boolean prevA = false, prevX = false;
     private boolean prevDU = false, prevDD = false, prevDL = false, prevDR = false;
 
     // gamepad2 button edges
-    private boolean prevA2  = false;
-    private boolean prevX2  = false;
-    private boolean prevY2  = false;
-    private boolean prevB2  = false;
+    private boolean prevA2 = false;
+    private boolean prevX2 = false;
+    private boolean prevY2 = false;
+    private boolean prevB2 = false;
     private boolean prevLB2 = false;
     private boolean prevRB2 = false;
     private boolean prevLT2 = false;
@@ -57,55 +56,55 @@ public class TeleOpAdjustable extends OpMode {
     private int thirdDir = 0;
 
     // ===== PRESET RPMs =====
-    private static final int PRESET_STALL          = 500;  // A -> low stall preset
-    private static final int PRESET_SHORT_MED_RPM  = 3050; // gamepad2 left trigger
-    private static final int PRESET_MED_RPM        = 3400; // gamepad2 Y
-    private static final int PRESET_MED_LONG_RPM   = 3250; // gamepad2 right bumper
-    private static final int PRESET_LONG_RPM       = 3260; // gamepad2 right trigger
+    private static final int PRESET_STALL = 500;   // A -> low stall preset
+    private static final int PRESET_SHORT_MED_RPM = 2900;  // gamepad2 left trigger
+    private static final int PRESET_MED_RPM = 3400;  // gamepad2 Y
+    private static final int PRESET_MED_LONG_RPM = 3250;  // gamepad2 right bumper
+    private static final int PRESET_LONG_RPM = 3300;  // gamepad2 right trigger
 
     // Fine adjust step and minimum
     private static final int RPM_STEP = 50;
-    private static final int MIN_RPM  = 500;
+    private static final int MIN_RPM = 500;
+
+    // Intake power threshold based on flywheel RPM
+    private static final double INTAKE_RPM_LIMIT_THRESHOLD = 700.0;
 
     // ===== FLYWHEEL READY-TO-SHOOT RUMBLE (gamepad2) =====
     private static final double RPM_TOLERANCE = 50.0;
-    private boolean flywheelAtSpeed       = false;
-    private boolean flywheelReadyRumbled  = false;
-    private double  lastTargetRPM         = 0.0;
+    private boolean flywheelAtSpeed = false;
+    private boolean flywheelReadyRumbled = false;
+    private double lastTargetRPM = 0.0;
 
     // ===== VISION =====
-    private VisionPortal      visionPortal;
+    private VisionPortal visionPortal;
     private AprilTagProcessor tagProcessor;
-    private boolean           visionConfigured = false;
+    private boolean visionConfigured = false;
+
+    // Red goal tag ID
+    private static final int RED_GOAL_TAG_ID = 24;
 
     // Last seen tag info (for telemetry continuity)
-    private int    lastTagId     = -1;
-    private double lastTagRange  = 0.0;
-    private double lastYaw       = 0.0;
-    private double lastBearing   = 0.0;
+    private int lastTagId = -1;
+    private double lastTagRange = 0.0;
+    private double lastYaw = 0.0;
+    private double lastBearing = 0.0;
 
     // For current frame
-    private boolean tagVisible       = false;
-    private double  currentBearing   = 0.0;
+    private boolean tagVisible = false;
+    private double currentBearing = 0.0;
 
     // ===== AIM RUMBLE (gamepad1) WHEN ALIGNED TO TAG =====
-    // Bearing is how many degrees we must turn to point at the tag; 0 = directly at tag.
-    private static final double AIM_BEARING_TOL_DEG = 1.5;  // tune this tolerance
+    // For RED, we want to be aimed slightly RIGHT of tag center -> negative offset.
+    private static final double AIM_BEARING_TOL_DEG = 1.5;   // window size
+    private static final double AIM_BEARING_OFFSET_DEG = -2.0;  // ~2° to the RIGHT
     private boolean aimRumbleActive = false;
-
-    // ===== DRIVE LOCK (ANTI-PUSH) =====
-    // When gamepad1 left trigger is held, lock drive motors to current encoder positions
-    private boolean driveLockActive = false;
-    private static final double DRIVE_LOCK_HOLD_POWER = 0.30;  // tune: higher = stronger hold, more current
-
-    private int lfLockPos, rfLockPos, lbLockPos, rbLockPos;
 
     @Override
     public void init() {
         // ---- Map drive ----
-        left_f  = hardwareMap.get(DcMotorEx.class, "leftFront");
+        left_f = hardwareMap.get(DcMotorEx.class, "leftFront");
         right_f = hardwareMap.get(DcMotorEx.class, "rightFront");
-        left_b  = hardwareMap.get(DcMotorEx.class, "leftBack");
+        left_b = hardwareMap.get(DcMotorEx.class, "leftBack");
         right_b = hardwareMap.get(DcMotorEx.class, "rightBack");
 
         left_f.setDirection(DcMotor.Direction.REVERSE);
@@ -123,9 +122,9 @@ public class TeleOpAdjustable extends OpMode {
         left_b.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // ---- Mechanisms ----
-        flywheel_Left  = hardwareMap.get(DcMotorEx.class, "flywheel_Left");
+        flywheel_Left = hardwareMap.get(DcMotorEx.class, "flywheel_Left");
         flywheel_Right = hardwareMap.get(DcMotorEx.class, "flywheel_Right");
-        intake         = hardwareMap.get(DcMotor.class,   "intake");
+        intake = hardwareMap.get(DcMotor.class, "intake");
 
         flywheel_Left.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         flywheel_Right.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
@@ -160,7 +159,7 @@ public class TeleOpAdjustable extends OpMode {
                 .setLiveViewContainerId(cameraMonitorViewId)
                 .build();
 
-        telemetry.addLine("TeleOpVisionPID init: VisionPortal starting...");
+        telemetry.addLine("TeleOp RED init: VisionPortal starting...");
         telemetry.update();
     }
 
@@ -183,7 +182,7 @@ public class TeleOpAdjustable extends OpMode {
         // flywheel ready rumble on gamepad2
         updateFlywheelReadyRumble();
 
-        // aim-based rumble on gamepad1 when aligned to tag
+        // aim-based rumble on gamepad1 when aligned to red tag with offset
         updateAimRumble();
 
         // ===== TELEMETRY =====
@@ -198,16 +197,15 @@ public class TeleOpAdjustable extends OpMode {
         telemetry.addData("Battery Voltage", "%.2f", flywheelController.getBatteryVoltage());
 
         telemetry.addLine();
-        telemetry.addData("--- Aim Assist ---", "");
+        telemetry.addData("--- Aim Assist (RED) ---", "");
+        telemetry.addData("Target Tag ID", RED_GOAL_TAG_ID);
         telemetry.addData("Tag Visible", tagVisible);
         telemetry.addData("Last Tag ID", lastTagId);
         telemetry.addData("Last Range (in)", "%.2f", lastTagRange);
         telemetry.addData("Last Yaw (deg)", "%.2f", lastYaw);
         telemetry.addData("Last Bearing (deg)", "%.2f", lastBearing);
+        telemetry.addData("Aim Offset (deg)", "%.2f", AIM_BEARING_OFFSET_DEG);
         telemetry.addData("Aim Aligned", aimRumbleActive);
-
-        telemetry.addLine();
-        telemetry.addData("Drive Lock", driveLockActive ? "ACTIVE" : "OFF");
 
         telemetry.update();
     }
@@ -248,39 +246,35 @@ public class TeleOpAdjustable extends OpMode {
 
         telemetry.addLine("--- Vision (AprilTag) ---");
 
-        if (!detections.isEmpty()) {
-            // Choose the closest tag as the target (simple heuristic)
-            AprilTagDetection bestTag = null;
-            double bestRange = Double.MAX_VALUE;
+        AprilTagDetection targetTag = null;
 
-            for (AprilTagDetection det : detections) {
-                double r = det.ftcPose.range;
-                if (r < bestRange) {
-                    bestRange = r;
-                    bestTag = det;
-                }
+        // Find the RED goal tag (ID 24)
+        for (AprilTagDetection det : detections) {
+            if (det.id == RED_GOAL_TAG_ID) {
+                targetTag = det;
+                break;
             }
+        }
 
-            AprilTagDetection tag = bestTag;
+        if (targetTag != null) {
+            double range = targetTag.ftcPose.range;    // distance from camera to tag center
+            double yaw = targetTag.ftcPose.yaw;      // rotation of tag
+            double bearing = targetTag.ftcPose.bearing;  // degrees camera must turn to aim at tag
 
-            double range   = tag.ftcPose.range;    // distance from camera to tag center
-            double yaw     = tag.ftcPose.yaw;      // rotation of tag around Z (face-on)
-            double bearing = tag.ftcPose.bearing;  // how many degrees camera must turn to point at tag
+            lastTagId = targetTag.id;
+            lastTagRange = range;
+            lastYaw = yaw;
+            lastBearing = bearing;
 
-            lastTagId     = tag.id;
-            lastTagRange  = range;
-            lastYaw       = yaw;
-            lastBearing   = bearing;
-
-            tagVisible     = true;
+            tagVisible = true;
             currentBearing = bearing;
 
-            telemetry.addData("Tag ID", tag.id);
+            telemetry.addData("Tag ID", targetTag.id);
             telemetry.addData("Range (in)", "%.2f", range);
             telemetry.addData("Yaw (deg)", "%.2f", yaw);
             telemetry.addData("Bearing (deg)", "%.2f", bearing);
         } else {
-            telemetry.addLine("No tags detected");
+            telemetry.addLine("Red goal tag not detected");
             tagVisible = false;
 
             if (lastTagId != -1) {
@@ -295,19 +289,19 @@ public class TeleOpAdjustable extends OpMode {
     // ===================== FLYWHEEL =====================
     private void runFlywheel() {
         // ---- Inputs ----
-        boolean x2   = gamepad2.x;
-        boolean y2   = gamepad2.y;
-        boolean b2   = gamepad2.b;
-        boolean lb2  = gamepad2.left_bumper;
-        boolean rb2  = gamepad2.right_bumper;
-        boolean a2   = gamepad2.a;
+        boolean x2 = gamepad2.x;
+        boolean y2 = gamepad2.y;
+        boolean b2 = gamepad2.b;
+        boolean lb2 = gamepad2.left_bumper;
+        boolean rb2 = gamepad2.right_bumper;
+        boolean a2 = gamepad2.a;
         boolean lsb2 = gamepad2.left_stick_button;
 
         // triggers as digital edges (pressed if > 0.5)
         double ltVal = gamepad2.left_trigger;
         double rtVal = gamepad2.right_trigger;
-        boolean lt2  = ltVal > 0.5;
-        boolean rt2  = rtVal > 0.5;
+        boolean lt2 = ltVal > 0.5;
+        boolean rt2 = rtVal > 0.5;
 
         // ---- Presets ----
         // medium preset (3400) on Y
@@ -379,15 +373,15 @@ public class TeleOpAdjustable extends OpMode {
 
         // If flywheel is off or target is zero/invalid, clear state
         if (!flywheelController.isFlywheelOn() || target <= 0.0) {
-            flywheelAtSpeed      = false;
+            flywheelAtSpeed = false;
             flywheelReadyRumbled = false;
-            lastTargetRPM        = target;
+            lastTargetRPM = target;
             return;
         }
 
         // If the target RPM changed, allow a new rumble when we next reach speed
         if (target != lastTargetRPM) {
-            flywheelAtSpeed      = false;
+            flywheelAtSpeed = false;
             flywheelReadyRumbled = false;
         }
 
@@ -404,24 +398,26 @@ public class TeleOpAdjustable extends OpMode {
         }
 
         flywheelAtSpeed = atSpeedNow;
-        lastTargetRPM   = target;
+        lastTargetRPM = target;
     }
 
     // ===================== AIM RUMBLE LOGIC (gamepad1) =====================
     private void updateAimRumble() {
         boolean flywheelActive = flywheelController.isFlywheelOn();
-        boolean alignedToTag   = flywheelActive
+
+        // For RED: aligned when bearing is close to AIM_BEARING_OFFSET_DEG (~-2°, slightly right)
+        double bearingError = currentBearing - AIM_BEARING_OFFSET_DEG;
+
+        boolean alignedToTag = flywheelActive
                 && tagVisible
-                && Math.abs(currentBearing) <= AIM_BEARING_TOL_DEG;
+                && Math.abs(bearingError) <= AIM_BEARING_TOL_DEG;
 
         if (alignedToTag && !aimRumbleActive) {
-            // Start continuous rumble on gamepad1 until we explicitly stop it
             if (gamepad1 != null) {
                 gamepad1.rumble(0.7, 0.7, Gamepad.RUMBLE_DURATION_CONTINUOUS);
             }
             aimRumbleActive = true;
         } else if (!alignedToTag && aimRumbleActive) {
-            // We are no longer aligned or the flywheel turned off; stop rumble
             if (gamepad1 != null) {
                 gamepad1.stopRumble();
             }
@@ -429,83 +425,37 @@ public class TeleOpAdjustable extends OpMode {
         }
     }
 
-    // ===================== DRIVE + DRIVE LOCK =====================
+    // ===================== DRIVE (WITH DEFENSE MODE) =====================
     private void drive() {
-        // Left trigger on gamepad1 engages drive lock
-        boolean lockRequested = gamepad1.left_trigger > 0.5;
+        // Defense mode: when gamepad1 left trigger is held,
+        // front wheels go backwards at 0.1, back wheels forwards at 0.1
+        boolean defenseMode = gamepad1.left_trigger > 0.5;
 
-        if (lockRequested && !driveLockActive) {
-            enableDriveLock();
-        } else if (!lockRequested && driveLockActive) {
-            disableDriveLock();
-        }
-
-        // If we're locked, ignore joystick drive commands
-        if (driveLockActive) {
+        if (defenseMode) {
+            left_f.setPower(-0.1);
+            right_f.setPower(-0.1);
+            left_b.setPower(0.1);
+            right_b.setPower(0.1);
             return;
         }
 
         // Normal mecanum drive
         driverScale = (gamepad1.right_trigger > 0.05) ? 0.25 : 1.0;
 
-        double y  = -gamepad1.left_stick_y;
-        double x  = -gamepad1.right_stick_x;
+        double y = -gamepad1.left_stick_y;
+        double x = -gamepad1.right_stick_x;
         double rx = -gamepad1.left_stick_x;
 
-        double ys  = y  * driverScale;
-        double xs  = x  * driverScale;
+        double ys = y * driverScale;
+        double xs = x * driverScale;
         double rxs = rx * driverScale;
 
         double d = Math.max(Math.abs(ys) + Math.abs(xs) + Math.abs(rxs), 1.0);
 
-        right_f.setPower(( ys + xs + rxs) / d);
-        left_b.setPower( ( ys - xs + rxs) / d);
-        left_f.setPower( ( ys - xs - rxs) / d);
-        right_b.setPower(( ys + xs - rxs) / d);
-    }
-
-    private void enableDriveLock() {
-        driveLockActive = true;
-
-        // Snapshot current encoder positions
-        lfLockPos = left_f.getCurrentPosition();
-        rfLockPos = right_f.getCurrentPosition();
-        lbLockPos = left_b.getCurrentPosition();
-        rbLockPos = right_b.getCurrentPosition();
-
-        // Set targets to current positions
-        left_f.setTargetPosition(lfLockPos);
-        right_f.setTargetPosition(rfLockPos);
-        left_b.setTargetPosition(lbLockPos);
-        right_b.setTargetPosition(rbLockPos);
-
-        // Switch to RUN_TO_POSITION; internal PID will hold the wheels here
-        left_f.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        right_f.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        left_b.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        right_b.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-
-        // Apply modest holding power
-        left_f.setPower(DRIVE_LOCK_HOLD_POWER);
-        right_f.setPower(DRIVE_LOCK_HOLD_POWER);
-        left_b.setPower(DRIVE_LOCK_HOLD_POWER);
-        right_b.setPower(DRIVE_LOCK_HOLD_POWER);
-    }
-
-    private void disableDriveLock() {
-        driveLockActive = false;
-
-        // Return to normal teleop mode
-        left_f.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        right_f.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        left_b.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        right_b.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        // Clear any residual power; drive() will overwrite with joystick next loop
-        left_f.setPower(0);
-        right_f.setPower(0);
-        left_b.setPower(0);
-        right_b.setPower(0);
+        right_f.setPower((ys + xs + rxs) / d);
+        left_b.setPower((ys - xs + rxs) / d);
+        left_f.setPower((ys - xs - rxs) / d);
+        right_b.setPower((ys + xs - rxs) / d);
     }
 
     // ===================== INTAKE =====================
@@ -519,13 +469,20 @@ public class TeleOpAdjustable extends OpMode {
         double intakePower = 0.0;
 
         if (b) {
-            intakePower = -1.0;  // hard reverse
+            // Hard reverse always full power
+            intakePower = -1.0;
         } else if (intakeOn) {
-            // If flywheel is on, limit current draw
-            if (flywheelController.isFlywheelOn()) {
-                intakePower = 0.5;   // softer intake while shooting
+            // Compute average current RPM of both flywheel motors
+            double currentRpmLeft = flywheelController.getCurrentRPM_Left();
+            double currentRpmRight = flywheelController.getCurrentRPM_Right();
+            double avgRpm = (currentRpmLeft + currentRpmRight) / 2.0;
+
+            // If flywheel is spinning "fast" (> 700 rpm), limit intake to 0.5
+            // Otherwise use full intake power
+            if (avgRpm > INTAKE_RPM_LIMIT_THRESHOLD) {
+                intakePower = 0.5;
             } else {
-                intakePower = 1.0;   // full speed when just intaking
+                intakePower = 1.0;
             }
         }
 
