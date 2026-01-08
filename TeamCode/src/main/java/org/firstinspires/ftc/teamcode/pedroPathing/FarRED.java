@@ -85,7 +85,7 @@ public class FarRED extends OpMode {
                 .addPath(
                         new BezierLine(new Pose(133.500, 58.200), new Pose(88.000, 21.000))
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(69))
+                .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(67))
                 .build();
 
         facegate = follower
@@ -93,7 +93,7 @@ public class FarRED extends OpMode {
                 .addPath(
                         new BezierLine(new Pose(88.000, 21.000), new Pose(120.000, 68.000))
                 )
-                .setLinearHeadingInterpolation(Math.toRadians(69), Math.toRadians(0))
+                .setLinearHeadingInterpolation(Math.toRadians(67), Math.toRadians(0))
                 .build();
     }
 
