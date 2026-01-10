@@ -302,7 +302,8 @@ public class TeleOpAdjustable extends OpMode {
         boolean lt2  = ltVal > 0.5;
         boolean rt2  = rtVal > 0.5;
 
-        if (y2 && !prevY2) setFlywheelPreset(PRESET_MED_RPM);
+        if (y2 && !prevY2){
+            setFlywheelPreset(PRESET_MED_RPM);}
         prevY2 = y2;
 
         if (rb2 && !prevRB2) setFlywheelPreset(PRESET_MED_LONG_RPM);
