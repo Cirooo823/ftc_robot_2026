@@ -20,8 +20,8 @@ public class VoltageFlywheelController { // Retaining Warriors' class name
 
     // --- HARDWARE CONSTANTS ---
     // !!! IMPORTANT: Verify these directions match your physical robot's wiring.
-    private final DcMotorSimple.Direction LEFT_DIR = DcMotorSimple.Direction.FORWARD;  // Example
-    private final DcMotorSimple.Direction RIGHT_DIR = DcMotorSimple.Direction.REVERSE; // Example
+    private final DcMotorSimple.Direction LEFT_DIR = DcMotorSimple.Direction.REVERSE;  // Example
+    private final DcMotorSimple.Direction RIGHT_DIR = DcMotorSimple.Direction.FORWARD; // Example
     private final double TICKS_PER_REVOLUTION = 28.0; // GoBilda 5203 1:1
 
     // --- PIDF COEFFICIENTS (Warriors' values, as starting point) ---

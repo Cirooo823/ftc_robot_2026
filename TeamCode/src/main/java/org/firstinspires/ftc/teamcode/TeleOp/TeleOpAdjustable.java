@@ -127,8 +127,8 @@ public class TeleOpAdjustable extends OpMode {
         flywheel_Left.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         flywheel_Right.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
-        flywheel_Left.setDirection(DcMotorSimple.Direction.FORWARD);
-        flywheel_Right.setDirection(DcMotorSimple.Direction.REVERSE);
+        flywheel_Left.setDirection(DcMotorSimple.Direction.REVERSE);
+        flywheel_Right.setDirection(DcMotorSimple.Direction.FORWARD);
 
         // Use the voltage-compensated controller
         flywheelController = new VoltageFlywheelController(hardwareMap);
