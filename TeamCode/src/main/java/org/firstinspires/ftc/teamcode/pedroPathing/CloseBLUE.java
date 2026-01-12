@@ -245,7 +245,7 @@ public class CloseBLUE extends OpMode {
     // ===================== INTAKE CONTROL METHODS =====================
     private void startIntake() {
         // Set power to 1.0 (full speed intake)
-        intake.setPower(0.5);
+        intake.setPower(1); //was 0.5 in regional but shouldn't get stuck anymore
     }
 
     private void reverseIntake() {

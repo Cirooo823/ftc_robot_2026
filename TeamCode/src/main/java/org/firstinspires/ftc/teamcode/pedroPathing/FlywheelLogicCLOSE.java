@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.TeleOp.VoltageFlywheelController;
@@ -11,7 +12,11 @@ import org.firstinspires.ftc.teamcode.TeleOp.VoltageFlywheelController;
 public class FlywheelLogicCLOSE {
     private DcMotorEx flywheel_Left, flywheel_Right;
     private DcMotor intake;
-    private CRServo   thirdStage;
+    private Servo barrierServo;
+    private final double BARRIER_CLOSED_POS = 0.67;
+    private final double BARRIER_OPEN_POS   = 0.0;
+    private double BARRIER_RELEASE_TIME = 1.5; //time for shots before gate closes again
+    private double BARRIER_RESET_TIME = 0.5; //time it takes t close gate
     private VoltageFlywheelController flywheelController;
     private ElapsedTime stateTimer = new ElapsedTime();
     private enum FlywheelState {
@@ -35,10 +40,10 @@ public class FlywheelLogicCLOSE {
     private double flywheelvelocity = 0;
     private double MIN_FLYWHEEL_RPM = 2900;
     private double TARGET_FLYWHEEL_RPM = 2950;
-    private double FLYWHEEL_MAX_SPINUP_TIME = 3;
+    private double FLYWHEEL_MAX_SPINUP_TIME = 1;
 
     public void init(HardwareMap hwMap) {
-        thirdStage = hwMap.get(CRServo.class, "thirdStage");
+        barrierServo = hwMap.get(Servo.class, "barrierServo");
         flywheelController = new VoltageFlywheelController(hwMap);
 
         // flywheel_Left = hwMap.get(DcMotorEx.class, "flywheel_Left");
@@ -47,8 +52,7 @@ public class FlywheelLogicCLOSE {
         flywheelState = FlywheelState.IDLE;
         // flywheel_Left.setPower(0);
         // flywheel_Right.setPower(0);
-        thirdStage.setPower(THIRD_STAGE_OFF_RPM);
-
+        barrierServo.setPosition(BARRIER_CLOSED_POS);//barrier is going to start closed
     }
 
     public void update() {
@@ -58,7 +62,7 @@ public class FlywheelLogicCLOSE {
         switch (flywheelState) {
             case IDLE:
                 if (shotsRemaining > 0) {
-                    thirdStage.setPower(THIRD_STAGE_OFF_RPM);
+                    barrierServo.setPosition(BARRIER_CLOSED_POS);
                     flywheelController.setFlywheelTargetRPM(TARGET_FLYWHEEL_RPM);
                     flywheelController.turnFlywheelOn();
                     // flywheel_Left.setVelocity(TARGET_FLYWHEEL_RPM);
@@ -74,23 +78,23 @@ public class FlywheelLogicCLOSE {
                 double avgRPM = (leftRPM + rightRPM) / 2.0;
 
                 if (avgRPM > MIN_FLYWHEEL_RPM || stateTimer.seconds() > FLYWHEEL_MAX_SPINUP_TIME) {
-                    thirdStage.setPower(THIRD_STAGE_ON_RPM);
+                    barrierServo.setPosition(BARRIER_OPEN_POS); //barrier opens
                     stateTimer.reset();
 
                     flywheelState = FlywheelState.LAUNCH;
                 }
                 break;
             case LAUNCH:
-                if (stateTimer.seconds() > THIRD_STAGE_ON_TIME) {
+                if (stateTimer.seconds() > BARRIER_RELEASE_TIME) {
                     shotsRemaining-=3; //increment by -3
-                    thirdStage.setPower(THIRD_STAGE_OFF_RPM);
+                    barrierServo.setPosition(BARRIER_CLOSED_POS);//close barrier
                     stateTimer.reset();
 
                     flywheelState = FlywheelState.RESET_GATE;
                 }
                 break;
             case RESET_GATE:
-                if (stateTimer.seconds() > THIRD_STAGE_OFF_TIME) {
+                if (stateTimer.seconds() > BARRIER_RESET_TIME) {
                     if (shotsRemaining > 0) {
                         stateTimer.reset();
                         flywheelState = FlywheelState.SPIN_UP;

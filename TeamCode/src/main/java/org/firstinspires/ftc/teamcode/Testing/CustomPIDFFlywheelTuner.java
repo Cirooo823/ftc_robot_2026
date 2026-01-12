@@ -26,8 +26,8 @@ public class CustomPIDFFlywheelTuner extends LinearOpMode {
     private final double TICKS_PER_REVOLUTION = 28.0;
 
     // --- HARDWARE CONSTANTS (Confirmed by diagnostics) ---
-    private final DcMotorSimple.Direction LEFT_MOTOR_FINAL_DIRECTION  = DcMotorSimple.Direction.FORWARD;
-    private final DcMotorSimple.Direction RIGHT_MOTOR_FINAL_DIRECTION = DcMotorSimple.Direction.REVERSE;
+    private final DcMotorSimple.Direction LEFT_MOTOR_FINAL_DIRECTION  = DcMotorSimple.Direction.REVERSE;
+    private final DcMotorSimple.Direction RIGHT_MOTOR_FINAL_DIRECTION = DcMotorSimple.Direction.FORWARD;
 
     // --- TUNING VARIABLES (Use these to adjust with Gamepad) ---
     public static double targetRPM = 3000; // Initial target RPM

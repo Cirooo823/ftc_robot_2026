@@ -25,7 +25,7 @@ public class VoltageFlywheelController { // Retaining Warriors' class name
     private final double TICKS_PER_REVOLUTION = 28.0; // GoBilda 5203 1:1
 
     // --- PIDF COEFFICIENTS (Warriors' values, as starting point) ---
-    public static double kF = 0.0004;
+    public static double kF = 0.000192;
     public static double kP = 0.0001;
     public static double kI = 0.0; // Start at 0, tune if needed
     public static double kD = 0.0; // Start at 0, rarely needed for flywheels

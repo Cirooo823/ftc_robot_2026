@@ -10,8 +10,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
-@Autonomous(name = "Close RED", group = "Autos")
-public class CloseRED extends OpMode {
+@Autonomous(name = "Close RED 12", group = "Autos")
+public class CloseRED12 extends OpMode {
 
     // --- 1. CHANGE: Use the Logic Class ---
     private FlywheelLogicCLOSE shooter;
@@ -25,8 +25,9 @@ public class CloseRED extends OpMode {
     private final Pose startPose = new Pose(121.5, 123.5, Math.toRadians(36));
 
     private PathChain shootpreload;
-    private PathChain faceartifactsfar, pickupartifactsfar, shootartifactsfar;
-    private PathChain faceartifactsmiddle, pickupartifactsmiddle, shootartifactsmiddle;
+    private PathChain facefar, pickupfar, opengate, shootfar;
+    private PathChain facemiddle, pickupmiddle, shootmiddle;
+    private PathChain faceclose, pickupclose, shootclose;
     private PathChain facegate;
 
     public void buildPaths() {
@@ -121,68 +122,103 @@ public class CloseRED extends OpMode {
 
             case 2: // Wait for shooter to finish -> Drive to Spike Mark
                 if (!shooter.isBusy()) { // Wait until shooter returns to IDLE
-                    follower.followPath(faceartifactsfar, true);
+                    follower.followPath(facefar, true);
                     setPathState(3);
                 }
                 break;
 
             case 3: // Arrived at Spike Mark -> Drive to Pickup
                 if (!follower.isBusy()) {
-                    follower.followPath(pickupartifactsfar, true);
+                    follower.followPath(pickupfar, true);
                     setPathState(4);
                 }
                 break;
 
-            case 4: // Arrived at Pickup -> Drive to Shoot
+            case 4:
                 if (!follower.isBusy()) {
-                    follower.followPath(shootartifactsfar, true);
+                    follower.followPath(opengate, true);
                     setPathState(5);
                 }
                 break;
 
-            case 5: // Arrived at Shooting Spot -> FIRE
+            case 5: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
-                    shooter.fireShots(1);
+                    follower.followPath(shootfar, true);
                     setPathState(6);
                 }
                 break;
 
-            case 6: // Wait for shooter -> Drive to Middle Spike
-                if (!shooter.isBusy()) {
-                    follower.followPath(faceartifactsmiddle, true);
+            case 6: // Arrived at Shooting Spot -> FIRE
+                if (!follower.isBusy()) {
+                    shooter.fireShots(1);
                     setPathState(7);
                 }
                 break;
 
-            case 7: // Arrived at Middle Spike -> Drive to Pickup
-                if (!follower.isBusy()) {
-                    follower.followPath(pickupartifactsmiddle, true);
+            case 7: // Wait for shooter -> Drive to Middle Spike
+                if (!shooter.isBusy()) {
+                    follower.followPath(facemiddle, true);
                     setPathState(8);
                 }
                 break;
 
-            case 8: // Arrived at Pickup -> Drive to Shoot
+            case 8: // Arrived at Middle Spike -> Drive to Pickup
                 if (!follower.isBusy()) {
-                    follower.followPath(shootartifactsmiddle, true);
+                    follower.followPath(pickupmiddle, true);
                     setPathState(9);
                 }
                 break;
 
-            case 9: // Arrived at Shooting Spot -> FIRE
+            case 9: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
-                    shooter.fireShots(1);
+                    follower.followPath(shootmiddle, true);
                     setPathState(10);
                 }
                 break;
 
-            case 10: // Wait for shooter -> Park
-                if (!shooter.isBusy()) {
-                    follower.followPath(facegate, true);
+            case 10: // Arrived at Shooting Spot -> FIRE
+                if (!follower.isBusy()) {
+                    shooter.fireShots(1);
                     setPathState(11);
                 }
                 break;
 
-            case 11: // End
+            case 11: // Wait for shooter -> Drive to Middle Spike
+                if (!shooter.isBusy()) {
+                    follower.followPath(faceclose, true);
+                    setPathState(12);
+                }
+                break;
+
+            case 12: // Arrived at Middle Spike -> Drive to Pickup
+                if (!follower.isBusy()) {
+                    follower.followPath(pickupclose, true);
+                    setPathState(13);
+                }
+                break;
+
+            case 13: // Arrived at Pickup -> Drive to Shoot
+                if (!follower.isBusy()) {
+                    follower.followPath(shootclose, true);
+                    setPathState(14);
+                }
+                break;
+
+            case 14: // Arrived at Shooting Spot -> FIRE
+                if (!follower.isBusy()) {
+                    shooter.fireShots(1);
+                    setPathState(15);
+                }
+                break;
+
+            case 15: // Wait for shooter -> Park
+                if (!shooter.isBusy()) {
+                    follower.followPath(facegate, true);
+                    setPathState(16);
+                }
+                break;
+
+            case 16: // End
                 if (!follower.isBusy()) {
                     setPathState(-1);
                 }
