@@ -62,11 +62,11 @@ public class TeleOpAdjustable extends OpMode {
     private boolean prevLSB2 = false;
 
     // ===== PRESET RPMs =====
-    private static final int PRESET_STALL          = 1000;  // A -> low stall preset
+    private static final int PRESET_STALL          = 2000;  // A -> low stall preset
     private static final int PRESET_SHORT_MED_RPM  = 2950; // gamepad2 left trigger
     private static final int PRESET_MED_RPM        = 3400; // gamepad2 Y
     private static final int PRESET_MED_LONG_RPM   = 3250; // gamepad2 right bumper
-    private static final int PRESET_LONG_RPM       = 3250; // gamepad2 right trigger
+    private static final int PRESET_LONG_RPM       = 3300; // gamepad2 right trigger
 
     // Fine adjust step and minimum
     private static final int RPM_STEP = 50;
@@ -391,7 +391,7 @@ public class TeleOpAdjustable extends OpMode {
     }
 
     // ===================== DRIVE =====================
-    // (Drive lock features removed; drivetrain math/controls unchanged.)
+
     private void drive() {
         driverScale = (gamepad1.right_trigger > 0.05) ? 0.25 : 1.0;
 
@@ -424,13 +424,11 @@ public class TeleOpAdjustable extends OpMode {
         if (b) {
             intakePower = -1.0;
         } else if (intakeOn) {
-            if (flywheelController.isFlywheelOn()) intakePower = 0.5;
-            else intakePower = 1.0;
-        }
 
+            intakePower = 1.0;
+        }
         intake.setPower(intakePower);
     }
-
     // ===================== BARRIER (SERVO) =====================
     private void runBarrier() {
         if (barrierServo == null) return;
