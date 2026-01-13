@@ -13,12 +13,12 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 
-@Autonomous(name = "Close RED 12", group = "Autos")
-public class CloseRED12 extends OpMode {
+@Autonomous(name = "Close RED Fly On", group = "Autos")
+public class RedCloseFlyON extends OpMode {
 
 
     // --- 1. CHANGE: Use the Logic Class ---
-    private FlywheelLogicCLOSE shooter;
+    private LogicFlyONClose shooter;
 
 
     private DcMotor intake;
@@ -53,7 +53,7 @@ public class CloseRED12 extends OpMode {
                         new BezierLine(
                                 new Pose(88.000, 87.000),
 
-                                new Pose(100.000, 84.000)
+                                new Pose(98.000, 84.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(49), Math.toRadians(0))
 
@@ -61,9 +61,9 @@ public class CloseRED12 extends OpMode {
 
         pickupfar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(100.000, 84.000),
+                                new Pose(98.000, 84.000),
 
-                                new Pose(128.500, 84.000)
+                                new Pose(126.00, 84.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -71,7 +71,7 @@ public class CloseRED12 extends OpMode {
 
         opengate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(128.500, 84.000),
+                                new Pose(126.00, 84.000),
                                 new Pose(104.000, 76.000),
                                 new Pose(128.000, 77.000)
                         )
@@ -103,7 +103,7 @@ public class CloseRED12 extends OpMode {
                         new BezierLine(
                                 new Pose(100.000, 58.000),
 
-                                new Pose(135.000, 58.000)
+                                new Pose(130.000, 58.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -111,7 +111,7 @@ public class CloseRED12 extends OpMode {
 
         shootmiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(135.000, 58.000),
+                                new Pose(130.000, 58.000),
                                 new Pose(80.000, 56.000),
                                 new Pose(88.000, 87.000)
                         )
@@ -133,7 +133,7 @@ public class CloseRED12 extends OpMode {
                         new BezierLine(
                                 new Pose(100.000, 36.000),
 
-                                new Pose(135.000, 36.000)
+                                new Pose(130.000, 36.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -141,7 +141,7 @@ public class CloseRED12 extends OpMode {
 
         shootclose = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(135.000, 36.000),
+                                new Pose(130.000, 36.000),
 
                                 new Pose(88.000, 87.000)
                         )
@@ -293,6 +293,7 @@ public class CloseRED12 extends OpMode {
 
             case 16: // End
                 if (!follower.isBusy()) {
+                    shooter.setFlywheelKeepAlive(false);
                     setPathState(-1);
                 }
                 break;
@@ -328,7 +329,7 @@ public class CloseRED12 extends OpMode {
 
 
         // --- 3. INIT SHOOTER LOGIC ---
-        shooter = new FlywheelLogicCLOSE();
+        shooter = new LogicFlyONClose();
         shooter.init(hardwareMap);
     }
 
@@ -337,7 +338,7 @@ public class CloseRED12 extends OpMode {
     public void start() {
         opmodeTimer.resetTimer();
         setPathState(0);
-
+        shooter.setFlywheelKeepAlive(true); //put this so that the flywheel stays on
 
         startIntake();
     }
@@ -397,6 +398,7 @@ public class CloseRED12 extends OpMode {
     @Override
     public void stop() {
         stopIntake();
+        shooter.setFlywheelKeepAlive(false);
     }
 }
 

@@ -33,29 +33,29 @@ public class CloseBLUE12 extends OpMode {
     public void buildPaths() {
         shootpreload = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(122.000, 123.000),
+                                new Pose(22.000, 123.000),
 
-                                new Pose(88.000, 87.000)
+                                new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(49))
+                ).setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(135))
 
                 .build();
 
         facefar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(88.000, 87.000),
+                                new Pose(56.000, 87.000),
 
-                                new Pose(102.000, 84.000)
+                                new Pose(42.000, 84.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(49), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
 
                 .build();
 
         pickupfar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(102.000, 84.000),
+                                new Pose(42.000, 84.000),
 
-                                new Pose(128.500, 84.000)
+                                new Pose(16.000, 84.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -63,39 +63,39 @@ public class CloseBLUE12 extends OpMode {
 
         opengate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(128.500, 84.000),
-                                new Pose(104.000, 76.000),
-                                new Pose(128.000, 77.000)
+                                new Pose(16.000, 84.000),
+                                new Pose(41.5000, 73.500),
+                                new Pose(17.000, 77.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
+                ).setConstantHeadingInterpolation(Math.toRadians(180))
 
                 .build();
 
         shootfar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(128.000, 77.000),
+                                new Pose(17.000, 75.000),
 
-                                new Pose(88.000, 87.000)
+                                new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(49))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
 
                 .build();
 
         facemiddle = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(88.000, 87.000),
+                                new Pose(56.000, 87.000),
 
-                                new Pose(102.000, 58.000)
+                                new Pose(42.000, 60.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(49), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
 
                 .build();
 
         pickupmiddle = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(102.000, 58.000),
+                                new Pose(42.000, 60.000),
 
-                                new Pose(135.000, 58.000)
+                                new Pose(9.000, 60.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -103,29 +103,29 @@ public class CloseBLUE12 extends OpMode {
 
         shootmiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(135.000, 58.000),
-                                new Pose(80.000, 56.000),
-                                new Pose(88.000, 87.000)
+                                new Pose(9.000, 60.000),
+                                new Pose(62.500, 50.000),
+                                new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(49))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
 
                 .build();
 
         faceclose = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(88.000, 87.000),
+                                new Pose(56.000, 87.000),
 
-                                new Pose(102.000, 36.000)
+                                new Pose(42.000, 36.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(49), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
 
                 .build();
 
         pickupclose = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(102.000, 36.000),
+                                new Pose(42.000, 36.000),
 
-                                new Pose(135.000, 36.000)
+                                new Pose(9.000, 36.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -133,21 +133,21 @@ public class CloseBLUE12 extends OpMode {
 
         shootclose = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(135.000, 36.000),
+                                new Pose(9.000, 36.000),
 
-                                new Pose(88.000, 87.000)
+                                new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(49))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
 
                 .build();
 
         facegate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(88.000, 87.000),
+                                new Pose(56.000, 87.000),
 
-                                new Pose(120.000, 71.000)
+                                new Pose(20.000, 70.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(49), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
 
                 .build();
     }

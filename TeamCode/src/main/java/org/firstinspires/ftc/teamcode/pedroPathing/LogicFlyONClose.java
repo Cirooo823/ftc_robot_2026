@@ -9,13 +9,14 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.TeleOp.VoltageFlywheelController;
 
-public class FlywheelLogicCLOSE {
+public class LogicFlyONClose {
+    private boolean keepFlywheelRunning = false; //NEW
     private DcMotorEx flywheel_Left, flywheel_Right;
     private DcMotor intake;
     private Servo barrierServo;
     private final double BARRIER_CLOSED_POS = 0.67;
     private final double BARRIER_OPEN_POS   = 0.0;
-    private double BARRIER_RELEASE_TIME = 1.5; //time for shots before gate closes again
+    private double BARRIER_RELEASE_TIME = 1; //time for shots before gate closes again
     private double BARRIER_RESET_TIME = 0.5; //time it takes t close gate
     private VoltageFlywheelController flywheelController;
     private ElapsedTime stateTimer = new ElapsedTime();
@@ -38,9 +39,9 @@ public class FlywheelLogicCLOSE {
     //--------FLYWHEEL CONSTANTS-----------
     private int shotsRemaining = 0;
     private double flywheelvelocity = 0;
-    private double MIN_FLYWHEEL_RPM = 3400;
-    private double TARGET_FLYWHEEL_RPM = 3500;
-    private double FLYWHEEL_MAX_SPINUP_TIME = 1.5;
+    private double MIN_FLYWHEEL_RPM = 3250;
+    private double TARGET_FLYWHEEL_RPM = 3300;
+    private double FLYWHEEL_MAX_SPINUP_TIME = 0.2;
 
     public void init(HardwareMap hwMap) {
         barrierServo = hwMap.get(Servo.class, "barrierServo");
@@ -53,6 +54,18 @@ public class FlywheelLogicCLOSE {
         // flywheel_Left.setPower(0);
         // flywheel_Right.setPower(0);
         barrierServo.setPosition(BARRIER_CLOSED_POS);//barrier is going to start closed
+    }
+
+    //this stuff is new i added it so the flywheel is always on
+    public void setFlywheelKeepAlive(boolean keepAlive) {
+        this.keepFlywheelRunning = keepAlive;
+        if (keepAlive) {
+            flywheelController.setFlywheelTargetRPM(TARGET_FLYWHEEL_RPM);
+            flywheelController.turnFlywheelOn();
+        } else {
+            flywheelController.setFlywheelTargetRPM(0);
+            flywheelController.turnFlywheelOff();
+        }
     }
 
     public void update() {
@@ -86,7 +99,7 @@ public class FlywheelLogicCLOSE {
                 break;
             case LAUNCH:
                 if (stateTimer.seconds() > BARRIER_RELEASE_TIME) {
-                    shotsRemaining-=3; //increment by -3
+                    shotsRemaining=0; //increment by -3
                     barrierServo.setPosition(BARRIER_CLOSED_POS);//close barrier
                     stateTimer.reset();
 
@@ -95,17 +108,11 @@ public class FlywheelLogicCLOSE {
                 break;
             case RESET_GATE:
                 if (stateTimer.seconds() > BARRIER_RESET_TIME) {
-                    if (shotsRemaining > 0) {
-                        stateTimer.reset();
-                        flywheelState = FlywheelState.SPIN_UP;
-                    } else {
-
+                    if (!keepFlywheelRunning) {
                         flywheelController.setFlywheelTargetRPM(0);
                         flywheelController.turnFlywheelOff();
-                        // flywheel_Left.setVelocity(0);//stop flywheel
-                        //flywheel_Right.setVelocity(0);//stop flywheel
-                        flywheelState = FlywheelState.IDLE;
                     }
+                    flywheelState = FlywheelState.IDLE;
                 }
                 break;
         }
