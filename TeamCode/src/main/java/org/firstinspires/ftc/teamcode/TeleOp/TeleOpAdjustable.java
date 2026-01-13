@@ -66,7 +66,7 @@ public class TeleOpAdjustable extends OpMode {
     private static final int PRESET_SHORT_MED_RPM  = 2950; // gamepad2 left trigger
     private static final int PRESET_MED_RPM        = 3400; // gamepad2 Y
     private static final int PRESET_MED_LONG_RPM   = 3250; // gamepad2 right bumper
-    private static final int PRESET_LONG_RPM       = 3300; // gamepad2 right trigger
+    private static final int PRESET_LONG_RPM       = 4100; // gamepad2 right trigger
 
     // Fine adjust step and minimum
     private static final int RPM_STEP = 50;
@@ -410,9 +410,28 @@ public class TeleOpAdjustable extends OpMode {
         left_f.setPower( ( ys - xs - rxs) / d);
         right_b.setPower(( ys + xs - rxs) / d);
     }
+    private void runIntake() {
+        boolean x = gamepad1.x;
+        if (x && !prevX) intakeOn = !intakeOn;
+        prevX = x;
+
+        boolean b = gamepad1.b;
+
+        double intakePower = 0.0;
+
+        // B overrides everything: hard reverse while held
+        if (b) {
+            intakePower = -1.0;
+        } else if (intakeOn) {
+            // X toggle: full forward (no flywheel-based scaling anymore)
+            intakePower = 1.0;
+        }
+
+        intake.setPower(intakePower);
+    }
 
     // ===================== INTAKE =====================
-    private void runIntake() {
+   /* private void runIntake() {
         boolean x = gamepad1.x;
         if (x && !prevX) intakeOn = !intakeOn;
         prevX = x;
@@ -424,11 +443,14 @@ public class TeleOpAdjustable extends OpMode {
         if (b) {
             intakePower = -1.0;
         } else if (intakeOn) {
-
-            intakePower = 1.0;
+            if (barrierOpen) intakePower = 0.85;
+            else intakePower = 1.0;
         }
+
         intake.setPower(intakePower);
     }
+    */
+
     // ===================== BARRIER (SERVO) =====================
     private void runBarrier() {
         if (barrierServo == null) return;
