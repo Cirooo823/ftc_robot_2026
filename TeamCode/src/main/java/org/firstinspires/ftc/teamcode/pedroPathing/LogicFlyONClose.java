@@ -39,9 +39,9 @@ public class LogicFlyONClose {
     //--------FLYWHEEL CONSTANTS-----------
     private int shotsRemaining = 0;
     private double flywheelvelocity = 0;
-    private double MIN_FLYWHEEL_RPM = 3250;
+    private double MIN_FLYWHEEL_RPM = 3280;
     private double TARGET_FLYWHEEL_RPM = 3300;
-    private double FLYWHEEL_MAX_SPINUP_TIME = 0.2;
+    private double FLYWHEEL_MAX_SPINUP_TIME = 0.9;
 
     public void init(HardwareMap hwMap) {
         barrierServo = hwMap.get(Servo.class, "barrierServo");

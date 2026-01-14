@@ -72,7 +72,7 @@ public class BlueCloseFlyON extends OpMode {
         opengate = follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(16.000, 84.000),
-                                new Pose(41.5000, 73.500),
+                                new Pose(41.500, 73.500),
                                 new Pose(17.000, 77.000)
                         )
                 ).setConstantHeadingInterpolation(Math.toRadians(180))
@@ -81,7 +81,7 @@ public class BlueCloseFlyON extends OpMode {
 
         shootfar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(17.000, 75.000),
+                                new Pose(17.000, 77.000),
 
                                 new Pose(56.000, 87.000)
                         )
