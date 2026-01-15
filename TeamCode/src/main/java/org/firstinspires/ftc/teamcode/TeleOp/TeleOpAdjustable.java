@@ -63,10 +63,10 @@ public class TeleOpAdjustable extends OpMode {
 
     // ===== PRESET RPMs =====
     private static final int PRESET_STALL          = 2000;  // A -> low stall preset
-    private static final int PRESET_SHORT_MED_RPM  = 2950; // gamepad2 left trigger
+    private static final int PRESET_SHORT_MED_RPM  = 3000; // gamepad2 left trigger
     private static final int PRESET_MED_RPM        = 3400; // gamepad2 Y
     private static final int PRESET_MED_LONG_RPM   = 3250; // gamepad2 right bumper
-    private static final int PRESET_LONG_RPM       = 4100; // gamepad2 right trigger
+    private static final int PRESET_LONG_RPM       = 3600; // gamepad2 right trigger
 
     // Fine adjust step and minimum
     private static final int RPM_STEP = 50;
@@ -486,8 +486,8 @@ public class TeleOpAdjustable extends OpMode {
         right_b.setPower(0);
         left_b.setPower(0);
 
-        flywheel_Left.setVelocity(0);
-        flywheel_Right.setVelocity(0);
+        flywheel_Left.setPower(0);
+        flywheel_Right.setPower(0);
         intake.setPower(0);
 
         // safe state
