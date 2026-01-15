@@ -17,7 +17,7 @@ public class LogicFlyONClose {
     private final double BARRIER_CLOSED_POS = 0.67;
     private final double BARRIER_OPEN_POS   = 0.0;
     private double BARRIER_RELEASE_TIME = 1; //time for shots before gate closes again
-    private double BARRIER_RESET_TIME = 0.5; //time it takes t close gate
+    private double BARRIER_RESET_TIME = 0.2; //time it takes t close gate
     private VoltageFlywheelController flywheelController;
     private ElapsedTime stateTimer = new ElapsedTime();
     private enum FlywheelState {
@@ -31,10 +31,10 @@ public class LogicFlyONClose {
     private FlywheelState flywheelState;
 
     //------THIRD STAGE CONSTANTS-------
-    private double THIRD_STAGE_ON_RPM = -200;
-    private double THIRD_STAGE_OFF_RPM = 0;
-    private double THIRD_STAGE_ON_TIME = 3; //was 5
-    private double THIRD_STAGE_OFF_TIME = 0.2;
+  //  private double THIRD_STAGE_ON_RPM = -200;
+   // private double THIRD_STAGE_OFF_RPM = 0;
+   // private double THIRD_STAGE_ON_TIME = 3; //was 5
+   // private double THIRD_STAGE_OFF_TIME = 0.2;
 
     //--------FLYWHEEL CONSTANTS-----------
     private int shotsRemaining = 0;

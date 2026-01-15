@@ -43,19 +43,19 @@ public class RedCloseFlyON extends OpMode {
                         new BezierLine(
                                 new Pose(122.000, 123.000),
 
-                                new Pose(85.000, 84.000)
+                                new Pose(86.000, 85.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(48))
+                ).setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(47))
 
                 .build();
 
         facefar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(85.000, 84.000),
+                                new Pose(86.000, 85.000),
 
                                 new Pose(98.000, 84.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(48), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(47), Math.toRadians(0))
 
                 .build();
 
@@ -83,19 +83,19 @@ public class RedCloseFlyON extends OpMode {
                         new BezierLine(
                                 new Pose(125.000, 77.000),
 
-                                new Pose(85.000, 84.000)
+                                new Pose(88.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(45))
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(48))
 
                 .build();
 
         facemiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(85.000, 84.000),
+                                new Pose(88.000, 87.000),
                                 new Pose(82.000, 68.000),
                                 new Pose(100.000, 58.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(48), Math.toRadians(0))
 
                 .build();
 
@@ -113,19 +113,19 @@ public class RedCloseFlyON extends OpMode {
                         new BezierCurve(
                                 new Pose(130.000, 58.000),
                                 new Pose(80.000, 56.000),
-                                new Pose(85.000, 84.000)
+                                new Pose(88.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(45))
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(47))
 
                 .build();
 
         faceclose = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(85.000, 84.000),
+                                new Pose(88.000, 87.000),
                                 new Pose(80.000, 45.000),
                                 new Pose(100.000, 36.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(47), Math.toRadians(0))
 
                 .build();
 
@@ -143,19 +143,19 @@ public class RedCloseFlyON extends OpMode {
                         new BezierLine(
                                 new Pose(130.000, 36.000),
 
-                                new Pose(85.000, 84.000)
+                                new Pose(88.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(45))
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(48))
 
                 .build();
 
         facegate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(85.000, 84.000),
+                                new Pose(88.000, 87.000),
 
                                 new Pose(115.000, 71.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(45), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(48), Math.toRadians(0))
 
                 .build();
     }

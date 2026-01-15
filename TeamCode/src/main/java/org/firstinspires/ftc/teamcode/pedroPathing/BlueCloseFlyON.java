@@ -28,7 +28,7 @@ public class BlueCloseFlyON extends OpMode {
 
 
     // --- POSES (Untouched) ---
-    private final Pose startPose = new Pose(121.5, 123.5, Math.toRadians(36));
+    private final Pose startPose = new Pose(22, 123, Math.toRadians(144));
 
 
     private PathChain shootpreload;
@@ -63,7 +63,7 @@ public class BlueCloseFlyON extends OpMode {
                         new BezierLine(
                                 new Pose(42.000, 84.000),
 
-                                new Pose(16.000, 84.000)
+                                new Pose(18.000, 84.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -71,9 +71,9 @@ public class BlueCloseFlyON extends OpMode {
 
         opengate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(16.000, 84.000),
-                                new Pose(41.500, 73.500),
-                                new Pose(17.000, 77.000)
+                                new Pose(18.000, 84.000),
+                                new Pose(41.5000, 73.500),
+                                new Pose(17.000, 78.000)
                         )
                 ).setConstantHeadingInterpolation(Math.toRadians(180))
 
@@ -81,7 +81,7 @@ public class BlueCloseFlyON extends OpMode {
 
         shootfar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(17.000, 77.000),
+                                new Pose(17.000, 78.000),
 
                                 new Pose(56.000, 87.000)
                         )
@@ -90,9 +90,9 @@ public class BlueCloseFlyON extends OpMode {
                 .build();
 
         facemiddle = follower.pathBuilder().addPath(
-                        new BezierLine(
+                        new BezierCurve(
                                 new Pose(56.000, 87.000),
-
+                                new Pose(64.000, 63.000),
                                 new Pose(42.000, 60.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
@@ -103,7 +103,7 @@ public class BlueCloseFlyON extends OpMode {
                         new BezierLine(
                                 new Pose(42.000, 60.000),
 
-                                new Pose(9.000, 60.000)
+                                new Pose(11.000, 60.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -111,7 +111,7 @@ public class BlueCloseFlyON extends OpMode {
 
         shootmiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(9.000, 60.000),
+                                new Pose(11.000, 60.000),
                                 new Pose(62.500, 50.000),
                                 new Pose(56.000, 87.000)
                         )
@@ -120,9 +120,9 @@ public class BlueCloseFlyON extends OpMode {
                 .build();
 
         faceclose = follower.pathBuilder().addPath(
-                        new BezierLine(
+                        new BezierCurve(
                                 new Pose(56.000, 87.000),
-
+                                new Pose(65.000, 39.000),
                                 new Pose(42.000, 36.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
@@ -133,7 +133,7 @@ public class BlueCloseFlyON extends OpMode {
                         new BezierLine(
                                 new Pose(42.000, 36.000),
 
-                                new Pose(9.000, 36.000)
+                                new Pose(11.000, 36.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -141,7 +141,7 @@ public class BlueCloseFlyON extends OpMode {
 
         shootclose = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(9.000, 36.000),
+                                new Pose(11.000, 36.000),
 
                                 new Pose(56.000, 87.000)
                         )
@@ -153,7 +153,7 @@ public class BlueCloseFlyON extends OpMode {
                         new BezierLine(
                                 new Pose(56.000, 87.000),
 
-                                new Pose(20.000, 70.000)
+                                new Pose(25.000, 70.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
 
