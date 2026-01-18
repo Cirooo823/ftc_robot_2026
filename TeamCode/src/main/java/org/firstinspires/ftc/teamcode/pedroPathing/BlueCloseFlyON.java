@@ -8,9 +8,9 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 
 @Autonomous(name = "Close BLUE Fly On", group = "Autos")
@@ -18,13 +18,20 @@ public class BlueCloseFlyON extends OpMode {
 
 
     // --- 1. CHANGE: Use the Logic Class ---
-    private LogicFlyONClose shooter;
+    private LogicFlyONCloseBLUE shooter;
 
+    private boolean intakeOn   = true;
+    private boolean barrierOpen = false;
 
-    private DcMotor intake;
+    private DcMotorEx intake;
     private Follower follower;
     private Timer pathTimer, opmodeTimer;
     private int pathState;
+    private static final double INTAKE_TICKS_PER_REV = 145.1;
+
+
+    private static final double INTAKE_RPM_BARRIER_CLOSED = 1150.0;
+    private static final double INTAKE_RPM_BARRIER_OPEN   = 400.0;
 
 
     // --- POSES (Untouched) ---
@@ -53,7 +60,7 @@ public class BlueCloseFlyON extends OpMode {
                         new BezierLine(
                                 new Pose(56.000, 87.000),
 
-                                new Pose(42.000, 84.000)
+                                new Pose(44.000, 84.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
 
@@ -61,7 +68,7 @@ public class BlueCloseFlyON extends OpMode {
 
         pickupfar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(42.000, 84.000),
+                                new Pose(44.000, 84.000),
 
                                 new Pose(18.000, 84.000)
                         )
@@ -83,7 +90,7 @@ public class BlueCloseFlyON extends OpMode {
                         new BezierLine(
                                 new Pose(17.000, 78.000),
 
-                                new Pose(56.000, 87.000)
+                                new Pose(59.000, 85.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
 
@@ -91,8 +98,8 @@ public class BlueCloseFlyON extends OpMode {
 
         facemiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(56.000, 87.000),
-                                new Pose(64.000, 63.000),
+                                new Pose(59.000, 85.000),
+                                new Pose(66.000, 63.000),
                                 new Pose(42.000, 60.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
@@ -113,7 +120,7 @@ public class BlueCloseFlyON extends OpMode {
                         new BezierCurve(
                                 new Pose(11.000, 60.000),
                                 new Pose(62.500, 50.000),
-                                new Pose(56.000, 87.000)
+                                new Pose(59.000, 85.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
 
@@ -121,7 +128,7 @@ public class BlueCloseFlyON extends OpMode {
 
         faceclose = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(56.000, 87.000),
+                                new Pose(59.000, 85.000),
                                 new Pose(65.000, 39.000),
                                 new Pose(42.000, 36.000)
                         )
@@ -153,7 +160,7 @@ public class BlueCloseFlyON extends OpMode {
                         new BezierLine(
                                 new Pose(56.000, 87.000),
 
-                                new Pose(25.000, 70.000)
+                                new Pose(27.000, 70.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
 
@@ -324,12 +331,15 @@ public class BlueCloseFlyON extends OpMode {
         buildPaths();
 
 
-        intake = hardwareMap.get(DcMotor.class, "intake");
-        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake = hardwareMap.get(DcMotorEx.class, "intake");
+        //intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 
         // --- 3. INIT SHOOTER LOGIC ---
-        shooter = new LogicFlyONClose();
+        shooter = new LogicFlyONCloseBLUE();
         shooter.init(hardwareMap);
     }
 
@@ -340,7 +350,7 @@ public class BlueCloseFlyON extends OpMode {
         setPathState(0);
         shooter.setFlywheelKeepAlive(true); //put this so that the flywheel stays on
 
-        startIntake();
+        runIntake();
     }
 
 
@@ -356,6 +366,9 @@ public class BlueCloseFlyON extends OpMode {
         // This runs the Driving Logic
         follower.update();
 
+        this.barrierOpen = shooter.isBarrierOpen();
+
+        runIntake();
 
         // This runs the "What should I do next?" Logic
         autonomousPathUpdate();
@@ -373,9 +386,28 @@ public class BlueCloseFlyON extends OpMode {
     // ===================== INTAKE CONTROL METHODS =====================
     private void startIntake() {
         // Set power to 1.0 (full speed intake)
-        intake.setPower(1); //was at 0.5 in the regional but I changed it bc of hardware updates
+       // intake.setPower(1); //was at 0.5 in the regional but I changed it bc of hardware updates
     }
 
+    private void runIntake() {
+
+        // Convert RPM -> ticks/sec because DcMotorEx.setVelocity() expects ticks/sec.
+        double targetRpm = 0.0;
+
+
+        // B overrides everything: hard reverse while held (use max RPM to clear jams)
+        if  (intakeOn) {
+            targetRpm = barrierOpen ? INTAKE_RPM_BARRIER_OPEN : INTAKE_RPM_BARRIER_CLOSED;
+        } else {
+            // off
+            intake.setPower(0.0);
+            return;
+        }
+
+
+        double ticksPerSecond = (targetRpm * INTAKE_TICKS_PER_REV) / 60.0;
+        intake.setVelocity(ticksPerSecond);
+    }
 
     private void reverseIntake() {
         // Set power to -1.0 (reverse/outtake) - useful for potential unjamming

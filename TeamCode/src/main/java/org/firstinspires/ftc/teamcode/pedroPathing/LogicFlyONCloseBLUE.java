@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.pedroPathing;
 
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
@@ -9,10 +8,14 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.TeleOp.VoltageFlywheelController;
 
-public class LogicFlyONClose {
+public class LogicFlyONCloseBLUE {
+    public boolean isBarrierOpen() {
+        // Check if the servo is currently at the open position
+        return Math.abs(barrierServo.getPosition() - BARRIER_OPEN_POS) < 0.1;
+    }
     private boolean keepFlywheelRunning = false; //NEW
     private DcMotorEx flywheel_Left, flywheel_Right;
-    private DcMotor intake;
+    private DcMotorEx intake;
     private Servo barrierServo;
     private final double BARRIER_CLOSED_POS = 0.67;
     private final double BARRIER_OPEN_POS   = 0.0;
@@ -39,8 +42,8 @@ public class LogicFlyONClose {
     //--------FLYWHEEL CONSTANTS-----------
     private int shotsRemaining = 0;
     private double flywheelvelocity = 0;
-    private double MIN_FLYWHEEL_RPM = 3280;
-    private double TARGET_FLYWHEEL_RPM = 3300;
+    private double MIN_FLYWHEEL_RPM = 3200;
+    private double TARGET_FLYWHEEL_RPM = 3250;
     private double FLYWHEEL_MAX_SPINUP_TIME = 0.9;
 
     public void init(HardwareMap hwMap) {

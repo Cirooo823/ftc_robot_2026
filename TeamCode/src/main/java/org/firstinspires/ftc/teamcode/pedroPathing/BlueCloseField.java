@@ -13,21 +13,23 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 
-@Autonomous(name = "Close RED Fly On", group = "Autos")
-public class RedCloseFlyON extends OpMode {
+@Autonomous(name = "BLUE Close Field", group = "Autos")
+public class BlueCloseField extends OpMode {
 
 
     // --- 1. CHANGE: Use the Logic Class ---
-    private LogicFlyONCloseRED shooter;
-
+    private LogicBlueCloseField shooter;
 
     private boolean intakeOn   = true;
     private boolean barrierOpen = false;
 
+
     private DcMotorEx intake;
+
     private Follower follower;
     private Timer pathTimer, opmodeTimer;
     private int pathState;
+
     private static final double INTAKE_TICKS_PER_REV = 145.1;
 
 
@@ -35,8 +37,9 @@ public class RedCloseFlyON extends OpMode {
     private static final double INTAKE_RPM_BARRIER_OPEN   = 400.0;
 
 
+
     // --- POSES (Untouched) ---
-    private final Pose startPose = new Pose(121.5, 123.5, Math.toRadians(36));
+    private final Pose startPose = new Pose(22, 123, Math.toRadians(144));
 
 
     private PathChain shootpreload;
@@ -49,29 +52,29 @@ public class RedCloseFlyON extends OpMode {
     public void buildPaths() {
         shootpreload = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(122.000, 123.000),
+                                new Pose(22.000, 123.000),
 
-                                new Pose(86.000, 85.000)
+                                new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(36), Math.toRadians(47))
+                ).setLinearHeadingInterpolation(Math.toRadians(144), Math.toRadians(138))
 
                 .build();
 
         facefar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(86.000, 85.000),
+                                new Pose(56.000, 87.000),
 
-                                new Pose(98.000, 84.000)
+                                new Pose(44.000, 84.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(47), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(138), Math.toRadians(180))
 
                 .build();
 
         pickupfar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(98.000, 84.000),
+                                new Pose(44.000, 84.000),
 
-                                new Pose(126.00, 84.000)
+                                new Pose(18.000, 84.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -79,39 +82,39 @@ public class RedCloseFlyON extends OpMode {
 
         opengate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(126.00, 84.000),
-                                new Pose(104.000, 76.000),
-                                new Pose(125.000, 77.000)
+                                new Pose(18.000, 84.000),
+                                new Pose(41.5000, 73.500),
+                                new Pose(17.000, 78.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(0))
+                ).setConstantHeadingInterpolation(Math.toRadians(180))
 
                 .build();
 
         shootfar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(122.000, 123.000),
+                                new Pose(17.000, 78.000),
 
-                                new Pose(86.000, 85.000)
+                                new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(47))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(138))
 
                 .build();
 
         facemiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(86.000, 85.000),
-                                new Pose(82.000, 68.000),
-                                new Pose(100.000, 58.000)
+                                new Pose(56.000, 87.000),
+                                new Pose(66.000, 63.000),
+                                new Pose(42.000, 60.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(47), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(138), Math.toRadians(180))
 
                 .build();
 
         pickupmiddle = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(100.000, 58.000),
+                                new Pose(42.000, 60.000),
 
-                                new Pose(130.000, 58.000)
+                                new Pose(11.000, 60.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -119,29 +122,29 @@ public class RedCloseFlyON extends OpMode {
 
         shootmiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(130.000, 58.000),
-                                new Pose(80.000, 56.000),
-                                new Pose(86.000, 85.000)
+                                new Pose(11.000, 60.000),
+                                new Pose(62.500, 50.000),
+                                new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(47))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
 
                 .build();
 
         faceclose = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(86.000, 85.000),
-                                new Pose(80.000, 45.000),
-                                new Pose(100.000, 36.000)
+                                new Pose(56.000, 87.000),
+                                new Pose(65.000, 39.000),
+                                new Pose(42.000, 36.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(47), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
 
                 .build();
 
         pickupclose = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(100.000, 36.000),
+                                new Pose(42.000, 36.000),
 
-                                new Pose(130.000, 36.000)
+                                new Pose(11.000, 36.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -149,21 +152,21 @@ public class RedCloseFlyON extends OpMode {
 
         shootclose = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(130.000, 36.000),
+                                new Pose(11.000, 36.000),
 
-                                new Pose(86.000, 85.000)
+                                new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(47))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(137))
 
                 .build();
 
         facegate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(86.000, 85.000),
+                                new Pose(56.000, 87.000),
 
-                                new Pose(115.000, 71.000)
+                                new Pose(27.000, 70.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(47), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(137), Math.toRadians(180))
 
                 .build();
     }
@@ -332,16 +335,19 @@ public class RedCloseFlyON extends OpMode {
         buildPaths();
 
 
-        intake = hardwareMap.get(DcMotorEx.class, "intake");
-        //intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+     //   intake = hardwareMap.get(DcMotor.class, "intake");
+        intake         = hardwareMap.get(DcMotorEx .class, "intake"); // CHANGED
+
+       // intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 
         // --- 3. INIT SHOOTER LOGIC ---
-        shooter = new LogicFlyONCloseRED();
+        shooter = new LogicBlueCloseField();
         shooter.init(hardwareMap);
+
     }
 
 
@@ -371,6 +377,7 @@ public class RedCloseFlyON extends OpMode {
 
         runIntake();
 
+
         // This runs the "What should I do next?" Logic
         autonomousPathUpdate();
 
@@ -384,10 +391,12 @@ public class RedCloseFlyON extends OpMode {
     }
 
 
+
     // ===================== INTAKE CONTROL METHODS =====================
     private void startIntake() {
         // Set power to 1.0 (full speed intake)
        // intake.setPower(1); //was at 0.5 in the regional but I changed it bc of hardware updates
+
     }
 
     private void runIntake() {
@@ -395,6 +404,10 @@ public class RedCloseFlyON extends OpMode {
         // Convert RPM -> ticks/sec because DcMotorEx.setVelocity() expects ticks/sec.
         double targetRpm = 0.0;
 
+
+
+
+        // B overrides everything: hard reverse while held (use max RPM to clear jams)
         if  (intakeOn) {
             targetRpm = barrierOpen ? INTAKE_RPM_BARRIER_OPEN : INTAKE_RPM_BARRIER_CLOSED;
         } else {
@@ -403,9 +416,12 @@ public class RedCloseFlyON extends OpMode {
             return;
         }
 
+
         double ticksPerSecond = (targetRpm * INTAKE_TICKS_PER_REV) / 60.0;
         intake.setVelocity(ticksPerSecond);
     }
+
+
 
     private void reverseIntake() {
         // Set power to -1.0 (reverse/outtake) - useful for potential unjamming
