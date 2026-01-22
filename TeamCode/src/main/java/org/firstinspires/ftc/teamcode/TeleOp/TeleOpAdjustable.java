@@ -120,14 +120,10 @@ public class TeleOpAdjustable extends OpMode {
 
 
     // ===================== INTAKE VELOCITY CONSTANTS =====================
-
-
     private static final double INTAKE_TICKS_PER_REV = 145.1;
-
 
     private static final double INTAKE_RPM_BARRIER_CLOSED = 1150.0;
     private static final double INTAKE_RPM_BARRIER_OPEN   = 300.0;
-
 
     @Override
     public void init() {
@@ -137,23 +133,20 @@ public class TeleOpAdjustable extends OpMode {
         left_b  = hardwareMap.get(DcMotorEx.class, "leftBack");
         right_b = hardwareMap.get(DcMotorEx.class, "rightBack");
 
-
-        left_f.setDirection(DcMotor.Direction.REVERSE);
-        right_b.setDirection(DcMotor.Direction.REVERSE);
-        right_f.setDirection(DcMotor.Direction.REVERSE);
-
+        left_f.setDirection(DcMotor.Direction.FORWARD);
+        left_b.setDirection(DcMotor.Direction.REVERSE);
+        right_f.setDirection(DcMotor.Direction.FORWARD);
+        right_b.setDirection(DcMotor.Direction.FORWARD);
 
         right_f.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         left_f.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         right_b.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         left_b.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-
         right_f.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         left_f.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         right_b.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         left_b.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
 
         // ---- Mechanisms ----
         flywheel_Left  = hardwareMap.get(DcMotorEx.class, "flywheel_Left");
@@ -395,8 +388,8 @@ public class TeleOpAdjustable extends OpMode {
 
 
         double y  = -gamepad1.left_stick_y;
-        double x  = -gamepad1.right_stick_x;
-        double rx = -gamepad1.left_stick_x;
+        double x  = -gamepad1.left_stick_x;
+        double rx = gamepad1.right_stick_x;
 
 
         double ys  = y  * driverScale;
@@ -407,9 +400,9 @@ public class TeleOpAdjustable extends OpMode {
         double d = Math.max(Math.abs(ys) + Math.abs(xs) + Math.abs(rxs), 1.0);
 
 
-        right_f.setPower(( ys + xs + rxs) / d);
+        right_f.setPower(( ys - xs - rxs) / d);
         left_b.setPower( ( ys - xs + rxs) / d);
-        left_f.setPower( ( ys - xs - rxs) / d);
+        left_f.setPower( ( ys + xs + rxs) / d);
         right_b.setPower(( ys + xs - rxs) / d);
     }
 
