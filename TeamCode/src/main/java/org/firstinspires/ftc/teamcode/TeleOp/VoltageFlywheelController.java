@@ -20,15 +20,15 @@ public class VoltageFlywheelController {
 
     // --- HARDWARE CONSTANTS ---
     // Verify these match your robot.
-    private static final DcMotorSimple.Direction LEFT_DIR  = DcMotorSimple.Direction.REVERSE;
-    private static final DcMotorSimple.Direction RIGHT_DIR = DcMotorSimple.Direction.FORWARD;
+    private static final DcMotorSimple.Direction LEFT_DIR  = DcMotorSimple.Direction.FORWARD;
+    private static final DcMotorSimple.Direction RIGHT_DIR = DcMotorSimple.Direction.REVERSE;
 
     // IMPORTANT: verify encoder ticks per motor revolution for your exact motor/gearbox.
     private static final double TICKS_PER_REVOLUTION = 28.0;
 
     // --- PIDF COEFFICIENTS ---
-    public static double kF = 0.000355;
-    public static double kP = 0.000025;
+    public static double kF = 0.000293;
+    public static double kP = 0.00005;
     public static double kI = 0.0;
     public static double kD = 0.0;
 
