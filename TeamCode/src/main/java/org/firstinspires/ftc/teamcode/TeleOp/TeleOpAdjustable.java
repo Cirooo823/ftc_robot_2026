@@ -81,7 +81,7 @@ public class TeleOpAdjustable extends OpMode {
     private static final int PRESET_SHORT_MED_RPM  = 3000; // gamepad2 left trigger
     private static final int PRESET_MED_RPM        = 3400; // gamepad2 Y
     private static final int PRESET_MED_LONG_RPM   = 3250; // gamepad2 right bumper
-    private static final int PRESET_LONG_RPM       = 3600; // gamepad2 right trigger
+    private static final int PRESET_LONG_RPM       = 3800; // gamepad2 right trigger
 
 
     // Fine adjust step and minimum
