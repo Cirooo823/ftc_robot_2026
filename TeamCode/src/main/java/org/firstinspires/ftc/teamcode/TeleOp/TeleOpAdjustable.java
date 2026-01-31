@@ -28,7 +28,6 @@ import java.util.concurrent.TimeUnit;
 @TeleOp(name="TeleOp with Adjustable RPM", group="TeleOp")
 public class TeleOpAdjustable extends OpMode {
 
-
     private VoltageFlywheelController flywheelController;
 
 
@@ -44,7 +43,7 @@ public class TeleOpAdjustable extends OpMode {
     private Servo barrierServo;
 
 
-    private static final double BARRIER_CLOSED_POS = 0.67;
+    private static final double BARRIER_CLOSED_POS = 0.6;
     private static final double BARRIER_OPEN_POS   = 0;
 
 
@@ -81,7 +80,7 @@ public class TeleOpAdjustable extends OpMode {
     private static final int PRESET_SHORT_MED_RPM  = 3000; // gamepad2 left trigger
     private static final int PRESET_MED_RPM        = 3400; // gamepad2 Y
     private static final int PRESET_MED_LONG_RPM   = 3250; // gamepad2 right bumper
-    private static final int PRESET_LONG_RPM       = 3800; // gamepad2 right trigger
+    private static final int PRESET_LONG_RPM       = 2850; // gamepad2 right trigger
 
 
     // Fine adjust step and minimum
@@ -123,7 +122,10 @@ public class TeleOpAdjustable extends OpMode {
     private static final double INTAKE_TICKS_PER_REV = 145.1;
 
     private static final double INTAKE_RPM_BARRIER_CLOSED = 1150.0;
-    private static final double INTAKE_RPM_BARRIER_OPEN   = 300.0;
+
+    private static final double INTAKE_RPM_BARRIER_OPEN_MED_LONG  = 300.0; // when target is PRESET_MED_LONG_RPM
+    private static final double INTAKE_RPM_BARRIER_OPEN_SHORT_MED = 200;
+    private static final double INTAKE_RPM_BARRIER_OPEN_DEFAULT = 300.0; // when target is PRESET_SHORT_MED_RPM
 
     @Override
     public void init() {
@@ -413,26 +415,37 @@ public class TeleOpAdjustable extends OpMode {
         if (x && !prevX) intakeOn = !intakeOn;
         prevX = x;
 
-
         boolean b = gamepad1.b;
-
 
         // Convert RPM -> ticks/sec because DcMotorEx.setVelocity() expects ticks/sec.
         double targetRpm = 0.0;
-
 
         // B overrides everything: hard reverse while held (use max RPM to clear jams)
         if (b) {
             targetRpm = -INTAKE_RPM_BARRIER_CLOSED; // -1150 RPM
         } else if (intakeOn) {
-            // X toggle: forward at 1150 when closed, 600 when open
-            targetRpm = barrierOpen ? INTAKE_RPM_BARRIER_OPEN : INTAKE_RPM_BARRIER_CLOSED;
+
+            if (!barrierOpen) {
+                // Barrier closed: full intake speed
+                targetRpm = INTAKE_RPM_BARRIER_CLOSED;
+            } else {
+                // Barrier open: choose based on the CURRENT flywheel target preset
+                double flywheelTarget = flywheelController.getTargetRPM();
+
+                if (Math.abs(flywheelTarget - PRESET_MED_LONG_RPM) < 0.5) {
+                    targetRpm = INTAKE_RPM_BARRIER_OPEN_MED_LONG;   // 450
+                } else if (Math.abs(flywheelTarget - PRESET_SHORT_MED_RPM) < 0.5) {
+                    targetRpm = INTAKE_RPM_BARRIER_OPEN_SHORT_MED;  // 400
+                } else {
+                    targetRpm = INTAKE_RPM_BARRIER_OPEN_DEFAULT;    // fallback (450)
+                }
+            }
+
         } else {
             // off
             intake.setPower(0.0);
             return;
         }
-
 
         double ticksPerSecond = (targetRpm * INTAKE_TICKS_PER_REV) / 60.0;
         intake.setVelocity(ticksPerSecond);

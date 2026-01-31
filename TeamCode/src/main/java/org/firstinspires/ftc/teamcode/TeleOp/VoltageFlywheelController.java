@@ -27,8 +27,8 @@ public class VoltageFlywheelController {
     private static final double TICKS_PER_REVOLUTION = 28.0;
 
     // --- PIDF COEFFICIENTS ---
-    public static double kF = 0.000385;
-    public static double kP = 0.00005;
+    public static double kF = 0.000385; //og 0.000385
+    public static double kP = 0.00005; //og 0.00005
     public static double kI = 0.0;
     public static double kD = 0.0;
 
