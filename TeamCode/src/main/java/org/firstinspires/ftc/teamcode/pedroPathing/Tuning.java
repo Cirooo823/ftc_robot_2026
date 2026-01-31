@@ -535,7 +535,7 @@ class LateralVelocityTuner extends OpMode {
  */
 class ForwardZeroPowerAccelerationTuner extends OpMode {
     private final ArrayList<Double> accelerations = new ArrayList<>();
-    public static double VELOCITY =55; //WAS 30
+    public static double VELOCITY =65; //WAS 30
 
     private double previousVelocity;
     private long previousTimeNano;
@@ -639,7 +639,7 @@ class ForwardZeroPowerAccelerationTuner extends OpMode {
  */
 class LateralZeroPowerAccelerationTuner extends OpMode {
     private final ArrayList<Double> accelerations = new ArrayList<>();
-    public static double VELOCITY = 45; //was 30
+    public static double VELOCITY = 50; //was 30
     private double previousVelocity;
     private long previousTimeNano;
     private boolean stopping;
@@ -735,7 +735,7 @@ class LateralZeroPowerAccelerationTuner extends OpMode {
  * @version 1.0, 3/12/2024
  */
 class TranslationalTuner extends OpMode {
-    public static double DISTANCE = 0.1
+    public static double DISTANCE = 40
             ; // was 40
     private boolean forward = true;
 
@@ -1241,9 +1241,9 @@ class Drawing {
         }
 
         // THIS WAS ADDED FOT THE PANELS TO DRAW IT WELL
-        double displayX = pose.getY();          // display X = actual Y
-        double displayY = pose.getX();          // display Y = actual X
-        double displayHeading = -pose.getHeading(); // flip heading if arrow points backwards
+        double displayX = -pose.getY();          // display X = actual Y
+        double displayY = -pose.getX();          // display Y = actual X
+        double displayHeading = pose.getHeading(); // flip heading if arrow points backwards
 
 
         panelsField.setStyle(style);

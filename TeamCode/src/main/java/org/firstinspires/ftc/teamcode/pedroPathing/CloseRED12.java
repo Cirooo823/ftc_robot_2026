@@ -13,6 +13,7 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 
+@Disabled
 @Autonomous(name = "Close RED 12", group = "Autos")
 public class CloseRED12 extends OpMode {
 
