@@ -135,8 +135,8 @@ public class TeleOpAdjustable extends OpMode {
         left_b  = hardwareMap.get(DcMotorEx.class, "leftBack");
         right_b = hardwareMap.get(DcMotorEx.class, "rightBack");
 
-        left_f.setDirection(DcMotor.Direction.FORWARD);
-        left_b.setDirection(DcMotor.Direction.REVERSE);
+        left_f.setDirection(DcMotor.Direction.REVERSE);
+        left_b.setDirection(DcMotor.Direction.FORWARD);
         right_f.setDirection(DcMotor.Direction.FORWARD);
         right_b.setDirection(DcMotor.Direction.FORWARD);
 
@@ -390,7 +390,7 @@ public class TeleOpAdjustable extends OpMode {
 
 
         double y  = -gamepad1.left_stick_y;
-        double x  = -gamepad1.left_stick_x;
+        double x  = gamepad1.left_stick_x;
         double rx = gamepad1.right_stick_x;
 
 

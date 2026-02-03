@@ -8,15 +8,13 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 
-@Disabled
-@Autonomous(name = "15 blue", group = "Autos")
-public class artifactblue15 extends OpMode {
+@Autonomous(name = "gate gate blue", group = "Autos")
+public class gategateblue extends OpMode {
 
 
     // --- 1. CHANGE: Use the Logic Class ---
@@ -64,7 +62,7 @@ public class artifactblue15 extends OpMode {
                         new BezierLine(
                                 new Pose(56.000, 87.000),
 
-                                new Pose(43.000, 60.000)
+                                new Pose(43.000, 61.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(134), Math.toRadians(180))
 
@@ -72,9 +70,9 @@ public class artifactblue15 extends OpMode {
 
         intakemiddle = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(43.000, 60.000),
+                                new Pose(43.000, 61.000),
 
-                                new Pose(10.000, 60.000)
+                                new Pose(10.000, 61.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -82,7 +80,7 @@ public class artifactblue15 extends OpMode {
 
         shootmiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(10.000, 60.000),
+                                new Pose(10.000, 61.000),
                                 new Pose(61.000, 51.500),
                                 new Pose(56.000, 87.000)
                         )
@@ -94,7 +92,7 @@ public class artifactblue15 extends OpMode {
                         new BezierCurve(
                                 new Pose(56.000, 87.000),
                                 new Pose(40.000, 61.000),
-                                new Pose(13.000, 62.500)
+                                new Pose(13.000, 62.800)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(134), Math.toRadians(160))
 
@@ -102,9 +100,39 @@ public class artifactblue15 extends OpMode {
 
         intakegate = follower.pathBuilder().addPath(
                         new BezierLine(
+                                new Pose(13.000, 62.800),
+
+                                new Pose(11.5, 62.80)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(135))
+
+                .build();
+
+        shootgate = follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(11.5, 62.80),
+                                new Pose(57.000, 50.000),
+                                new Pose(56.000, 87.000)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(135))
+
+                .build();
+
+        opengate = follower.pathBuilder().addPath(
+                        new BezierCurve(
+                                new Pose(56.000, 87.000),
+                                new Pose(40.000, 61.000),
+                                new Pose(13.000, 62.500)
+                        )
+                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(160))
+
+                .build();
+
+        intakegate = follower.pathBuilder().addPath(
+                        new BezierLine(
                                 new Pose(13.000, 62.500),
 
-                                new Pose(10.2, 61.800)
+                                new Pose(11.5, 62.50)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(130))
 
@@ -112,41 +140,11 @@ public class artifactblue15 extends OpMode {
 
         shootgate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(10.20, 61.800),
+                                new Pose(11.5, 62.50),
                                 new Pose(57.000, 50.000),
                                 new Pose(56.000, 87.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(130), Math.toRadians(135))
-
-                .build();
-
-        facefar = follower.pathBuilder().addPath(
-                        new BezierLine(
-                                new Pose(56.000, 87.000),
-
-                                new Pose(43.000, 36.000)
-                        )
-                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
-
-                .build();
-
-        intakefar = follower.pathBuilder().addPath(
-                        new BezierLine(
-                                new Pose(43.000, 36.000),
-
-                                new Pose(10.000, 36.000)
-                        )
-                ).setTangentHeadingInterpolation()
-
-                .build();
-
-        shootfar = follower.pathBuilder().addPath(
-                        new BezierCurve(
-                                new Pose(10.000, 36.000),
-                                new Pose(44.000, 23.000),
-                                new Pose(56.000, 87.000)
-                        )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(135))
 
                 .build();
 
@@ -164,7 +162,7 @@ public class artifactblue15 extends OpMode {
                         new BezierLine(
                                 new Pose(43.000, 85.000),
 
-                                new Pose(15.000, 85.000)
+                                new Pose(18.000, 85.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -172,7 +170,7 @@ public class artifactblue15 extends OpMode {
 
         shootclose = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(15.000, 85.000),
+                                new Pose(18.000, 85.000),
                                 new Pose(35.000, 66.000),
                                 new Pose(56.000, 87.000)
                         )
@@ -252,8 +250,8 @@ public class artifactblue15 extends OpMode {
 
             case 7:
                 if (!follower.isBusy()) {
-                        follower.followPath(intakegate, true);
-                        setPathState(8);
+                    follower.followPath(intakegate, true);
+                    setPathState(8);
                 }
                 break;
 
@@ -278,15 +276,15 @@ public class artifactblue15 extends OpMode {
 
             case 10: // Wait for shooter -> Drive to Middle Spike
                 if (!shooter.isBusy()) {
-                    follower.followPath(facefar, true);
+                    follower.followPath(opengate, true);
                     setPathState(11);
                 }
                 break;
 
 
-            case 11: // Arrived at Middle Spike -> Drive to Pickup
+            case 11:
                 if (!follower.isBusy()) {
-                    follower.followPath(intakefar, true);
+                    follower.followPath(intakegate, true);
                     setPathState(12);
                 }
                 break;
@@ -294,8 +292,10 @@ public class artifactblue15 extends OpMode {
 
             case 12: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
-                    follower.followPath(shootfar, true);
-                    setPathState(13);
+                    if (pathTimer.getElapsedTime() > 1200) {
+                        follower.followPath(shootgate, true);
+                        setPathState(13);
+                    }
                 }
                 break;
 

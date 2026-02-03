@@ -8,17 +8,19 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 
+@Disabled
 @Autonomous(name = "15 red", group = "Autos")
 public class artifactred15 extends OpMode {
 
 
     // --- 1. CHANGE: Use the Logic Class ---
-    private LogicFlyONCloseRED shooter;
+    private logic15blue shooter;
 
     private boolean intakeOn   = true;
     private boolean barrierOpen = false;
@@ -52,7 +54,7 @@ public class artifactred15 extends OpMode {
                         new BezierLine(
                                 new Pose(117.500, 130.000),
 
-                                new Pose(86.000, 85.000)
+                                new Pose(89.000, 88.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(44), Math.toRadians(48))
 
@@ -60,7 +62,7 @@ public class artifactred15 extends OpMode {
 
         facemiddle = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(86.000, 85.000),
+                                new Pose(89.000, 88.000),
 
                                 new Pose(102.000, 58.000)
                         )
@@ -82,7 +84,7 @@ public class artifactred15 extends OpMode {
                         new BezierCurve(
                                 new Pose(140.000, 58.000),
                                 new Pose(92.000, 41.000),
-                                new Pose(86.000, 85.000)
+                                new Pose(89.000, 88.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(48))
 
@@ -90,9 +92,9 @@ public class artifactred15 extends OpMode {
 
         opengate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(86.000, 85.000),
+                                new Pose(89.000, 88.000),
 
-                                new Pose(131.000, 60.000)
+                                new Pose(131.000, 59.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(48), Math.toRadians(25))
 
@@ -100,9 +102,9 @@ public class artifactred15 extends OpMode {
 
         intakegate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(131.000, 60.000),
+                                new Pose(131.000, 59.000),
 
-                                new Pose(131.500, 60.000)
+                                new Pose(131.500, 59.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(25), Math.toRadians(28))
 
@@ -110,9 +112,9 @@ public class artifactred15 extends OpMode {
 
         shootgate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(131.500, 60.000),
+                                new Pose(131.500, 59.000),
 
-                                new Pose(86.000, 85.000)
+                                new Pose(89.000, 88.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(28), Math.toRadians(48))
 
@@ -120,7 +122,7 @@ public class artifactred15 extends OpMode {
 
         facefar = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(86.000, 85.000),
+                                new Pose(89.000, 88.000),
 
                                 new Pose(102.000, 36.000)
                         )
@@ -142,7 +144,7 @@ public class artifactred15 extends OpMode {
                         new BezierLine(
                                 new Pose(140.000, 36.000),
 
-                                new Pose(86.000, 85.000)
+                                new Pose(89.000, 88.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(48))
 
@@ -150,7 +152,7 @@ public class artifactred15 extends OpMode {
 
         faceclose = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(86.000, 85.000),
+                                new Pose(89.000, 88.000),
 
                                 new Pose(102.000, 85.000)
                         )
@@ -172,7 +174,7 @@ public class artifactred15 extends OpMode {
                         new BezierLine(
                                 new Pose(128.500, 85.000),
 
-                                new Pose(86.000, 85.000)
+                                new Pose(89.000, 88.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(48))
 
@@ -180,7 +182,7 @@ public class artifactred15 extends OpMode {
 
         facegate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(86.000, 85.000),
+                                new Pose(89.000, 88.000),
 
                                 new Pose(122.000, 72.000)
                         )
@@ -385,7 +387,7 @@ public class artifactred15 extends OpMode {
 
 
         // --- 3. INIT SHOOTER LOGIC ---
-        shooter = new LogicFlyONCloseRED();
+        shooter = new logic15blue();
         shooter.init(hardwareMap);
     }
 

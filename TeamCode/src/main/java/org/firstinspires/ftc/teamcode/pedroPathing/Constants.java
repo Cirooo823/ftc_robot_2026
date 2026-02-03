@@ -29,12 +29,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 public class Constants {
     public static FollowerConstants followerConstants = new FollowerConstants()
             .mass(12.5) //write the robot's mass in the parenthesis, in kg
-           .forwardZeroPowerAcceleration(-36.63173124)
-          .lateralZeroPowerAcceleration(-78.75452249)
-         //  .translationalPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.01, 0))
-        //   .headingPIDFCoefficients(new PIDFCoefficients(1, 0, 0.05, 0))
-        //   .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.01,0.0,0.0008,0.6,0.0))
-        //    .centripetalScaling(0.0005);
+           .forwardZeroPowerAcceleration(-38.0940821)
+          .lateralZeroPowerAcceleration(-82.03902669)
+          .translationalPIDFCoefficients(new PIDFCoefficients(0.1, 0, 0.001, 0))
+          .headingPIDFCoefficients(new PIDFCoefficients(1.3, 0, 0.05, 0))
+            .drivePIDFCoefficients(new FilteredPIDFCoefficients(0.02,0.0,0.000001,0.6,0.0))
+        .centripetalScaling(0.0005);
 ;
 
     public static PathConstraints pathConstraints = new PathConstraints(0.99, 100, 1, 1);
@@ -50,8 +50,8 @@ public class Constants {
             .rightRearMotorName("rightBack")
             .leftRearMotorName("leftBack")
             .leftFrontMotorName("leftFront")
-            .leftFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
-            .leftRearMotorDirection(DcMotorSimple.Direction.REVERSE) //was reversed
+            .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
+            .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD) //was reversed
             .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
             .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD);
 
