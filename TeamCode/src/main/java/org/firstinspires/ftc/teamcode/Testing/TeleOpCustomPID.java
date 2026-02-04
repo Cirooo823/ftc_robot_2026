@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.Testing;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.CRServo;
@@ -9,7 +10,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 // IMPORT YOUR CUSTOM FLYWHEEL CONTROLLER CLASS
 
-
+@Disabled
 @TeleOp(name="TeleOpCustomPID", group="TeleOp")
 public class TeleOpCustomPID extends OpMode {
     private FlywheelController flywheelController;
