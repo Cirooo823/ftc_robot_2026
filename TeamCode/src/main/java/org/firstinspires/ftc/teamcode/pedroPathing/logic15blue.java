@@ -41,9 +41,9 @@ public class logic15blue {
     //--------FLYWHEEL CONSTANTS-----------
     private int shotsRemaining = 0;
     private double flywheelvelocity = 0;
-    private double MIN_FLYWHEEL_RPM = 3100;
-    private double TARGET_FLYWHEEL_RPM = 3130;
-    private double FLYWHEEL_MAX_SPINUP_TIME = 0.9;
+    private double MIN_FLYWHEEL_RPM = 3130;
+    private double TARGET_FLYWHEEL_RPM = 3155;
+    private double FLYWHEEL_MAX_SPINUP_TIME = 1;
 
     public void init(HardwareMap hwMap) {
         barrierServo = hwMap.get(Servo.class, "barrierServo");

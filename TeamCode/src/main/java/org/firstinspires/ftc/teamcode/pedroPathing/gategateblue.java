@@ -17,6 +17,9 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 public class gategateblue extends OpMode {
 
 
+    private boolean safetyTriggered = false; //for safety so it leaves
+
+
     // --- 1. CHANGE: Use the Logic Class ---
     private logic15blue shooter;
 
@@ -31,7 +34,7 @@ public class gategateblue extends OpMode {
 
 
     private static final double INTAKE_RPM_BARRIER_CLOSED = 1150.0;
-    private static final double INTAKE_RPM_BARRIER_OPEN   = 400.0;
+    private static final double INTAKE_RPM_BARRIER_OPEN   = 375.0; //was 400
 
 
     // --- POSES (Untouched) ---
@@ -62,7 +65,7 @@ public class gategateblue extends OpMode {
                         new BezierLine(
                                 new Pose(56.000, 87.000),
 
-                                new Pose(43.000, 61.000)
+                                new Pose(45.000, 61.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(134), Math.toRadians(180))
 
@@ -70,9 +73,9 @@ public class gategateblue extends OpMode {
 
         intakemiddle = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(43.000, 61.000),
+                                new Pose(45.000, 61.000),
 
-                                new Pose(10.000, 61.000)
+                                new Pose(13.000, 61.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -80,7 +83,7 @@ public class gategateblue extends OpMode {
 
         shootmiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(10.000, 61.000),
+                                new Pose(13.000, 61.000),
                                 new Pose(61.000, 51.500),
                                 new Pose(56.000, 87.000)
                         )
@@ -91,8 +94,8 @@ public class gategateblue extends OpMode {
         opengate = follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(56.000, 87.000),
-                                new Pose(40.000, 61.000),
-                                new Pose(13.000, 62.800)
+                                new Pose(40.000, 62.000),
+                                new Pose(13.000, 62.600)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(134), Math.toRadians(160))
 
@@ -100,28 +103,28 @@ public class gategateblue extends OpMode {
 
         intakegate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(13.000, 62.800),
+                                new Pose(13.000, 62.600),
 
-                                new Pose(11.5, 62.80)
+                                new Pose(11.75, 62.8)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(135))
+                ).setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(131))
 
                 .build();
 
         shootgate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(11.5, 62.80),
+                                new Pose(11.75, 62.8),
                                 new Pose(57.000, 50.000),
                                 new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(135))
+                ).setLinearHeadingInterpolation(Math.toRadians(131), Math.toRadians(135))
 
                 .build();
 
         opengate = follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(56.000, 87.000),
-                                new Pose(40.000, 61.000),
+                                new Pose(40.000, 62.000),
                                 new Pose(13.000, 62.500)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(160))
@@ -132,19 +135,19 @@ public class gategateblue extends OpMode {
                         new BezierLine(
                                 new Pose(13.000, 62.500),
 
-                                new Pose(11.5, 62.50)
+                                new Pose(11.7, 62.75)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(130))
+                ).setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(131))
 
                 .build();
 
         shootgate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(11.5, 62.50),
+                                new Pose(11.7, 62.75),
                                 new Pose(57.000, 50.000),
                                 new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(130), Math.toRadians(135))
+                ).setLinearHeadingInterpolation(Math.toRadians(131), Math.toRadians(135))
 
                 .build();
 
@@ -182,7 +185,7 @@ public class gategateblue extends OpMode {
                         new BezierLine(
                                 new Pose(56.000, 87.000),
 
-                                new Pose(22.000, 72.000)
+                                new Pose(33.000, 72.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(137), Math.toRadians(180))
 
@@ -192,6 +195,11 @@ public class gategateblue extends OpMode {
 
     // --- 2. THE CORRECTED STATE MACHINE ---
     public void autonomousPathUpdate() {
+        if (opmodeTimer.getElapsedTimeSeconds() > 29 && !safetyTriggered) { //if 28.5 seconds pass, so the auto doesnt just randomly stay there lol
+            setPathState(99);
+            safetyTriggered = true;
+        }
+
         switch (pathState) {
             case 0: // Drive to Shoot Preload
                 follower.followPath(shootpreload);
@@ -258,7 +266,7 @@ public class gategateblue extends OpMode {
 
             case 8: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
-                    if (pathTimer.getElapsedTime() > 1200) {
+                    if (pathTimer.getElapsedTime() > 1400) {
                         follower.followPath(shootgate, true);
                         setPathState(9);
                     }
@@ -292,7 +300,7 @@ public class gategateblue extends OpMode {
 
             case 12: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
-                    if (pathTimer.getElapsedTime() > 1200) {
+                    if (pathTimer.getElapsedTime() > 1400) {
                         follower.followPath(shootgate, true);
                         setPathState(13);
                     }
@@ -347,13 +355,22 @@ public class gategateblue extends OpMode {
                 }
                 break;
 
-
             case 19: // End
                 if (!follower.isBusy()) {
                     shooter.setFlywheelKeepAlive(false);
                     setPathState(-1);
                 }
                 break;
+
+            case 99: // SAFETY
+                shooter.setFlywheelKeepAlive(false); //turn off shooter
+                intakeOn = false; //turn off intake
+
+                follower.followPath(facegate, true);
+
+                setPathState(-1); // End the state machine
+                break;
+
         }
     }
 
