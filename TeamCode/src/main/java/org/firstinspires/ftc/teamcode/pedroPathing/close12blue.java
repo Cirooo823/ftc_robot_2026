@@ -232,12 +232,16 @@ public class close12blue extends OpMode {
 
             case 8: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
-                    if (pathTimer.getElapsedTime() > 1700) {
-                        follower.followPath(shootgate, true);
-                        setPathState(9);
-                    }
+                    follower.followPath(shootgate, true);
+                    setPathState(9);
                 }
+                else if (pathTimer.getElapsedTime() > 3000) {
+                    follower.followPath(shootgate, true);
+                    setPathState(9);
+                }
+
                 break;
+
 
 
             case 9: // Arrived at Shooting Spot -> FIRE
