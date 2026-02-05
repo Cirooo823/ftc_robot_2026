@@ -36,7 +36,7 @@ public class teleWithPedro extends OpMode {
 
     // ======= TUNE ME: aim lock behavior =======
     private static final double AIM_TOL_DEG   = 1.5;   // "good enough" tolerance
-    private static final double AIM_KP        = 3.0;   // proportional gain on heading error
+    private static final double AIM_KP        = 2.0;   // proportional gain on heading error
     private static final double AIM_MAX_TURN  = 1.0;   // clamp turn command magnitude (0..1)
     private static final double MICRO_ADJUST_GAIN = 0.35; // right stick adds small trim while locked
 

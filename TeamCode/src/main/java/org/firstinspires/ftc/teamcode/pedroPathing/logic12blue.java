@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.pedroPathing;
 
-import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -8,7 +7,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.teamcode.TeleOp.VoltageFlywheelController;
 
-public class logic15red {
+public class logic12blue {
     public boolean isBarrierOpen() {
         // Check if the servo is currently at the open position
         return Math.abs(barrierServo.getPosition() - BARRIER_OPEN_POS) < 0.1;
@@ -19,7 +18,7 @@ public class logic15red {
     private Servo barrierServo;
     private final double BARRIER_CLOSED_POS = 0.67;
     private final double BARRIER_OPEN_POS   = 0.0;
-    private double BARRIER_RELEASE_TIME = 1.5; //time for shots before gate closes again
+    private double BARRIER_RELEASE_TIME = 1.3; //time for shots before gate closes again
     private double BARRIER_RESET_TIME = 0.1; //time it takes t close gate
     private VoltageFlywheelController flywheelController;
     private ElapsedTime stateTimer = new ElapsedTime();
@@ -44,7 +43,7 @@ public class logic15red {
     private double flywheelvelocity = 0;
     private double MIN_FLYWHEEL_RPM = 3130;
     private double TARGET_FLYWHEEL_RPM = 3155;
-    private double FLYWHEEL_MAX_SPINUP_TIME = 0.9;
+    private double FLYWHEEL_MAX_SPINUP_TIME = 1;
 
     public void init(HardwareMap hwMap) {
         barrierServo = hwMap.get(Servo.class, "barrierServo");

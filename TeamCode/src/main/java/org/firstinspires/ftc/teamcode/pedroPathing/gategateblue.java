@@ -8,11 +8,13 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 
+@Disabled
 @Autonomous(name = "gate gate blue", group = "Autos")
 public class gategateblue extends OpMode {
 
@@ -44,6 +46,8 @@ public class gategateblue extends OpMode {
     private PathChain shootpreload;
     private PathChain facemiddle, intakemiddle, shootmiddle;
     private PathChain opengate, intakegate, shootgate;
+    private PathChain opengate2, intakegate2, shootgate2;
+
     private PathChain facefar, intakefar, shootfar;
     private PathChain faceclose, intakeclose, shootclose;
     private PathChain facegate;
@@ -121,7 +125,7 @@ public class gategateblue extends OpMode {
 
                 .build();
 
-        opengate = follower.pathBuilder().addPath(
+        opengate2 = follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(56.000, 87.000),
                                 new Pose(40.000, 62.000),
@@ -131,7 +135,7 @@ public class gategateblue extends OpMode {
 
                 .build();
 
-        intakegate = follower.pathBuilder().addPath(
+        intakegate2 = follower.pathBuilder().addPath(
                         new BezierLine(
                                 new Pose(13.000, 62.500),
 
@@ -141,7 +145,7 @@ public class gategateblue extends OpMode {
 
                 .build();
 
-        shootgate = follower.pathBuilder().addPath(
+        shootgate2 = follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(11.7, 62.75),
                                 new Pose(57.000, 50.000),
@@ -284,7 +288,7 @@ public class gategateblue extends OpMode {
 
             case 10: // Wait for shooter -> Drive to Middle Spike
                 if (!shooter.isBusy()) {
-                    follower.followPath(opengate, true);
+                    follower.followPath(opengate2, true);
                     setPathState(11);
                 }
                 break;
@@ -292,7 +296,7 @@ public class gategateblue extends OpMode {
 
             case 11:
                 if (!follower.isBusy()) {
-                    follower.followPath(intakegate, true);
+                    follower.followPath(intakegate2, true);
                     setPathState(12);
                 }
                 break;
@@ -301,7 +305,7 @@ public class gategateblue extends OpMode {
             case 12: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
                     if (pathTimer.getElapsedTime() > 1400) {
-                        follower.followPath(shootgate, true);
+                        follower.followPath(shootgate2, true);
                         setPathState(13);
                     }
                 }

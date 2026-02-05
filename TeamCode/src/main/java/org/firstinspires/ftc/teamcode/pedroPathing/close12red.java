@@ -8,15 +8,13 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 
-@Disabled
-@Autonomous(name = "gate gate red", group = "Autos")
-public class gategatered extends OpMode {
+@Autonomous(name = "12 red", group = "Autos")
+public class close12red extends OpMode {
 
 
     // --- 1. CHANGE: Use the Logic Class ---
@@ -43,8 +41,6 @@ public class gategatered extends OpMode {
     private PathChain shootpreload;
     private PathChain facemiddle, intakemiddle, shootmiddle;
     private PathChain opengate, intakegate, shootgate;
-    private PathChain opengate2, intakegate2, shootgate2;
-
     private PathChain faceclose, intakeclose, shootclose;
     private PathChain facegate;
 
@@ -95,7 +91,7 @@ public class gategatered extends OpMode {
                         new BezierCurve(
                                 new Pose(89.000, 88.000),
                                 new Pose(88.000, 60.000),
-                                new Pose(131.500, 61.00)
+                                new Pose(130.900, 61.00)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(48), Math.toRadians(30))
 
@@ -103,9 +99,9 @@ public class gategatered extends OpMode {
 
         intakegate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(131.500, 61.00),
+                                new Pose(130.900, 61.00),
 
-                                new Pose(132.00, 61.00)
+                                new Pose(131.20, 61.00)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(30), Math.toRadians(35))
 
@@ -113,43 +109,14 @@ public class gategatered extends OpMode {
 
         shootgate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                              new Pose(132.00, 61.00),
-                              new Pose(92.000, 59.000),
-                              new Pose(89.000, 88.000)
-        )
+                                new Pose(131.20, 61.00),
+                                new Pose(92.000, 59.000),
+                                new Pose(89.000, 88.000)
+                        )
                 ).setLinearHeadingInterpolation(Math.toRadians(35), Math.toRadians(48))
 
                 .build();
 
-        opengate2 = follower.pathBuilder().addPath(
-                new BezierCurve(
-                        new Pose(89.000, 88.000),
-                        new Pose(90.000, 61.000),
-                        new Pose(131.00, 60.00)
-                )
-                ).setLinearHeadingInterpolation(Math.toRadians(48), Math.toRadians(25))
-
-                .build();
-
-        intakegate2 = follower.pathBuilder().addPath(
-                        new BezierLine(
-                                new Pose(131.000, 60.000),
-
-                                new Pose(132.500, 60.000)
-                        )
-                ).setLinearHeadingInterpolation(Math.toRadians(25), Math.toRadians(40))
-
-                .build();
-
-        shootgate2 = follower.pathBuilder().addPath(
-                        new BezierLine(
-                                new Pose(132.500, 60.000),
-
-                                new Pose(89.000, 88.000)
-                        )
-                ).setLinearHeadingInterpolation(Math.toRadians(33), Math.toRadians(48))
-
-                .build();
 
         faceclose = follower.pathBuilder().addPath(
                         new BezierLine(
@@ -185,7 +152,7 @@ public class gategatered extends OpMode {
                         new BezierLine(
                                 new Pose(89.000, 88.000),
 
-                                new Pose(122.000, 72.000)
+                                new Pose(115.000, 72.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(48), Math.toRadians(0))
 
@@ -261,7 +228,7 @@ public class gategatered extends OpMode {
 
             case 8: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
-                    if (pathTimer.getElapsedTime() > 1200) {
+                    if (pathTimer.getElapsedTime() > 1400) {
                         follower.followPath(shootgate, true);
                         setPathState(9);
                     }
@@ -279,15 +246,15 @@ public class gategatered extends OpMode {
 
             case 10: // Wait for shooter -> Drive to Middle Spike
                 if (!shooter.isBusy()) {
-                    follower.followPath(opengate2, true);
+                    follower.followPath(faceclose, true);
                     setPathState(11);
                 }
                 break;
 
 
-            case 11:
+            case 11: // Arrived at Middle Spike -> Drive to Pickup
                 if (!follower.isBusy()) {
-                    follower.followPath(intakegate2, true);
+                    follower.followPath(intakeclose, true);
                     setPathState(12);
                 }
                 break;
@@ -295,10 +262,8 @@ public class gategatered extends OpMode {
 
             case 12: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
-                    if (pathTimer.getElapsedTime() > 1200) {
-                        follower.followPath(shootgate2, true);
-                        setPathState(13);
-                    }
+                    follower.followPath(shootclose, true);
+                    setPathState(13);
                 }
                 break;
 
@@ -311,47 +276,15 @@ public class gategatered extends OpMode {
                 break;
 
 
-            case 14: // Wait for shooter -> Drive to Middle Spike
+            case 14: // Wait for shooter -> Park
                 if (!shooter.isBusy()) {
-                    follower.followPath(faceclose, true);
+                    follower.followPath(facegate, true);
                     setPathState(15);
                 }
                 break;
 
 
-            case 15: // Arrived at Middle Spike -> Drive to Pickup
-                if (!follower.isBusy()) {
-                    follower.followPath(intakeclose, true);
-                    setPathState(16);
-                }
-                break;
-
-
-            case 16: // Arrived at Pickup -> Drive to Shoot
-                if (!follower.isBusy()) {
-                    follower.followPath(shootclose, true);
-                    setPathState(17);
-                }
-                break;
-
-
-            case 17: // Arrived at Shooting Spot -> FIRE
-                if (!follower.isBusy()) {
-                    shooter.fireShots(1);
-                    setPathState(18);
-                }
-                break;
-
-
-            case 18: // Wait for shooter -> Park
-                if (!shooter.isBusy()) {
-                    follower.followPath(facegate, true);
-                    setPathState(19);
-                }
-                break;
-
-
-            case 19: // End
+            case 15: // End
                 if (!follower.isBusy()) {
                     shooter.setFlywheelKeepAlive(false);
                     setPathState(-1);
