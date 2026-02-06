@@ -9,36 +9,52 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 // ===== Pedro Pathing imports =====
 import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.HeadingInterpolator;
+import com.pedropathing.paths.Path;
+import com.pedropathing.paths.PathChain;
+
+import java.util.function.Supplier;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import org.firstinspires.ftc.teamcode.pedroPathing.PoseStorage;
 
-@TeleOp(name="teleWithPedro", group="TeleOp")
-public class teleWithPedro extends OpMode {
+@TeleOp(name="BLUE teleWithPedro", group="TeleOp")
+public class teleWithPedroBlue extends OpMode {
 
     // ===================== PEDRO DRIVE =====================
     private Follower follower;
 
-    // You said: start at (135, 9) heading pi (0,0 bottom-left red side)
-    private static final Pose TELEOP_START_POSE = new Pose(135, 9, Math.PI);
+    // Fallback start pose if Auto didn't set PoseStorage.lastPose
+    private static final Pose TELEOP_FALLBACK_START_POSE = new Pose(135, 9, Math.PI);
 
     // Goals (your provided coordinates)
-    private static final double BLUE_GOAL_X = 6.0;
+    private static final double BLUE_GOAL_X = 8.0;
     private static final double BLUE_GOAL_Y = 136.0;
     private static final double RED_GOAL_X  = 138.0;
     private static final double RED_GOAL_Y  = 136.0;
 
+    // ===================== PLACEHOLDERS YOU WILL FILL =====================
+    // LB1 target shooting position (X,Y). Heading is computed automatically to aim at BLUE goal.
+    private static final double SHOOT_POS_LB_X = 84.0;
+    private static final double SHOOT_POS_LB_Y = 12.0;
+
+    // RB1 target shooting position (X,Y). Heading computed to aim at RED goal.
+    private static final double SHOOT_POS_RB_X = 60.0;
+    private static final double SHOOT_POS_RB_Y = 12.0;
+    // =======================================================
+
     // Shooter offset relative to robot center (inches)
-    // You defined shooter at (0, -6) in robot frame where +forward is "north".
-    // Here we interpret robot frame as: +forward along robot heading, +right to robot’s right.
+    // Robot frame definition: +forward along heading, +right to robot’s right.
     private static final double SHOOTER_OFFSET_RIGHT_IN   = 0.0;
     private static final double SHOOTER_OFFSET_FORWARD_IN = -6.0;
 
-    // ======= TUNE ME: aim lock behavior =======
-    private static final double AIM_TOL_DEG   = 1.5;   // "good enough" tolerance
-    private static final double AIM_KP        = 2.0;   // proportional gain on heading error
-    private static final double AIM_MAX_TURN  = 1.0;   // clamp turn command magnitude (0..1)
-    private static final double MICRO_ADJUST_GAIN = 0.35; // right stick adds small trim while locked
+    // ======= TUNE ME: heading hold after arriving =======
+    private static final double AIM_TOL_DEG   = 1.5;
+    private static final double AIM_KP        = 1.5;
+    private static final double AIM_MAX_TURN  = 0.8;
+    private static final double MICRO_ADJUST_GAIN = 0.35;
 
     // Driver scaling (hold right trigger = slow)
     private double driverScale = 1.0;
@@ -47,13 +63,23 @@ public class teleWithPedro extends OpMode {
     private boolean prevLB1 = false;
     private boolean prevRB1 = false;
 
-    // Drive state machine (no pathing now)
+    // Lazy path suppliers (rebuilt at press time so they start from CURRENT pose)
+    private Supplier<PathChain> toShootLB;
+    private Supplier<PathChain> toShootRB;
+
+    // Drive state machine
     private enum DriveState {
         MANUAL,
-        AIM_LOCK_BLUE,
-        AIM_LOCK_RED
+        AUTO_TO_LB,
+        AUTO_TO_RB,
+        AIM_LOCK_BLUE, // after arriving from LB path
+        AIM_LOCK_RED   // after arriving from RB path
     }
     private DriveState driveState = DriveState.MANUAL;
+
+    // Used for telemetry
+    private boolean usedAutoStartPose = false;
+    private Pose teleopStartPoseUsed = TELEOP_FALLBACK_START_POSE;
 
     // ===================== MECHANISMS =====================
     private VoltageFlywheelController flywheelController;
@@ -88,7 +114,6 @@ public class teleWithPedro extends OpMode {
     private static final int PRESET_CLOSE = 3000;
     private static final int PRESET_FAR   = 2850;
 
-    // Fine adjust step and minimum
     private static final int RPM_STEP = 50;
     private static final int MIN_RPM  = 500;
 
@@ -102,22 +127,36 @@ public class teleWithPedro extends OpMode {
     private static final double INTAKE_TICKS_PER_REV = 145.1;
 
     private static final double INTAKE_RPM_BARRIER_CLOSED_POSITION = 1150.0;
-
     private static final double INTAKE_RPM_BARRIER_FAR  = 230.0;
     private static final double INTAKE_RPM_BARRIER_CLOSE = 400.0;
     private static final double INTAKE_RPM_BARRIER_OPEN_DEFAULT = 400.0;
-
     private static final double INTAKE_RPM_PRESET_G1_RSB = 230.0;
 
     @Override
     public void init() {
-        // ===================== PEDRO INIT =====================
         follower = Constants.createFollower(hardwareMap);
 
-        // This sets the pose estimate Pedro starts with in TeleOp.
-        // Pedro will then integrate Pinpoint odometry from your Constants.localizerConstants.
-        follower.setStartingPose(TELEOP_START_POSE);
+        // === Start pose: use Auto’s last pose if present, otherwise fallback ===
+        Pose startPose = TELEOP_FALLBACK_START_POSE;
+        if (PoseStorage.lastPose != null && isPoseValid(PoseStorage.lastPose)) {
+            startPose = PoseStorage.lastPose;
+            usedAutoStartPose = true;
+        }
+        teleopStartPoseUsed = startPose;
+
+        follower.setStartingPose(startPose);
         follower.update(); // prime
+
+        // Build suppliers lazily. NOTE: they compute headings at press time based on goal.
+        toShootLB = () -> buildGoToShootAndAimPath(
+                SHOOT_POS_LB_X, SHOOT_POS_LB_Y,
+                BLUE_GOAL_X, BLUE_GOAL_Y
+        );
+
+        toShootRB = () -> buildGoToShootAndAimPath(
+                SHOOT_POS_RB_X, SHOOT_POS_RB_Y,
+                RED_GOAL_X, RED_GOAL_Y
+        );
 
         // ===================== MECHANISMS INIT =====================
         flywheel_Left  = hardwareMap.get(DcMotorEx.class, "flywheel_Left");
@@ -139,32 +178,30 @@ public class teleWithPedro extends OpMode {
         barrierServo.setPosition(BARRIER_CLOSED_POS);
         barrierOpen = false;
 
-        telemetry.addLine("teleWithPedro init complete (AIM LOCK ONLY: LB=blue, RB=red).");
+        telemetry.addLine("teleWithPedro init complete (AUTO TO SHOOT POS: LB->posA aim BLUE, RB->posB aim RED).");
+        telemetry.addData("StartPoseSource", usedAutoStartPose ? "AUTO (PoseStorage)" : "FALLBACK");
+        telemetry.addData("StartPose", teleopStartPoseUsed);
+        telemetry.addData("LB shoot pos", "(%.1f, %.1f)", SHOOT_POS_LB_X, SHOOT_POS_LB_Y);
+        telemetry.addData("RB shoot pos", "(%.1f, %.1f)", SHOOT_POS_RB_X, SHOOT_POS_RB_Y);
         telemetry.update();
     }
 
     @Override
     public void start() {
-        // Puts follower into teleop-drive mode.
         follower.startTeleopDrive();
     }
 
     @Override
     public void loop() {
-        // Pedro requirement: update every loop so pose stays fresh
         follower.update();
 
-        // Toggle aim-lock states
-        handleAimLockToggles();
-
-        // Drive (manual or aim-lock)
-        runDrive();
+        handleAutoToggles();
+        runDriveStateMachine();
 
         // Mechanisms
         runFlywheel();
         runIntake();
         runBarrier();
-
         flywheelController.update();
         updateFlywheelReadyRumble();
 
@@ -174,8 +211,22 @@ public class teleWithPedro extends OpMode {
         telemetry.addData("Pose", p);
         telemetry.addData("Vel", follower.getVelocity());
         telemetry.addData("DriveState", driveState);
+        telemetry.addData("StartPoseSource", usedAutoStartPose ? "AUTO" : "FALLBACK");
 
-        if (driveState != DriveState.MANUAL) {
+        telemetry.addLine();
+        telemetry.addData("--- Flywheel ---", "");
+        telemetry.addData("Flywheel State", flywheelController.isFlywheelOn() ? "ACTIVE" : "OFF");
+        telemetry.addData("Target RPM", "%.0f", flywheelController.getTargetRPM());
+        telemetry.addData("Actual RPM Left", "%.0f", flywheelController.getCurrentRPM_Left());
+        telemetry.addData("Actual RPM Right", "%.0f", flywheelController.getCurrentRPM_Right());
+        telemetry.addData("Battery Voltage", "%.2f", flywheelController.getBatteryVoltage());
+
+        telemetry.addLine();
+        telemetry.addData("--- Barrier ---", "");
+        telemetry.addData("Barrier", barrierOpen ? "OPEN" : "CLOSED");
+        telemetry.addData("Barrier Pos", "%.3f", barrierOpen ? BARRIER_OPEN_POS : BARRIER_CLOSED_POS);
+
+        if (driveState == DriveState.AIM_LOCK_BLUE || driveState == DriveState.AIM_LOCK_RED) {
             double gx = (driveState == DriveState.AIM_LOCK_BLUE) ? BLUE_GOAL_X : RED_GOAL_X;
             double gy = (driveState == DriveState.AIM_LOCK_BLUE) ? BLUE_GOAL_Y : RED_GOAL_Y;
             double desired = computeAimHeadingRad(p, gx, gy);
@@ -188,9 +239,9 @@ public class teleWithPedro extends OpMode {
     }
 
     // =========================================================
-    // =================== AIM LOCK TOGGLES =====================
+    // =============== AUTO TOGGLES (LB/RB) =====================
     // =========================================================
-    private void handleAimLockToggles() {
+    private void handleAutoToggles() {
         boolean lb = gamepad1.left_bumper;
         boolean rb = gamepad1.right_bumper;
 
@@ -200,66 +251,116 @@ public class teleWithPedro extends OpMode {
         prevLB1 = lb;
         prevRB1 = rb;
 
-        // LB toggles BLUE aim-lock
+        // LB toggles "go to LB shoot position then aim BLUE"
         if (lbPressed) {
-            if (driveState == DriveState.AIM_LOCK_BLUE) driveState = DriveState.MANUAL;
-            else driveState = DriveState.AIM_LOCK_BLUE;
+            if (driveState == DriveState.AUTO_TO_LB || driveState == DriveState.AIM_LOCK_BLUE) {
+                cancelAutoToManual();
+            } else {
+                startAutoToLB();
+            }
         }
 
-        // RB toggles RED aim-lock
+        // RB toggles "go to RB shoot position then aim RED"
         if (rbPressed) {
-            if (driveState == DriveState.AIM_LOCK_RED) driveState = DriveState.MANUAL;
-            else driveState = DriveState.AIM_LOCK_RED;
+            if (driveState == DriveState.AUTO_TO_RB || driveState == DriveState.AIM_LOCK_RED) {
+                cancelAutoToManual();
+            } else {
+                startAutoToRB();
+            }
+        }
+    }
+
+    private void startAutoToLB() {
+        follower.followPath(toShootLB.get());
+        driveState = DriveState.AUTO_TO_LB;
+    }
+
+    private void startAutoToRB() {
+        follower.followPath(toShootRB.get());
+        driveState = DriveState.AUTO_TO_RB;
+    }
+
+    private void cancelAutoToManual() {
+        follower.startTeleopDrive();
+        driveState = DriveState.MANUAL;
+    }
+
+    // =========================================================
+    // =================== DRIVE STATE MACHINE =================
+    // =========================================================
+    private void runDriveStateMachine() {
+        // Your right-trigger slow
+        driverScale = (gamepad1.right_trigger > 0.05) ? 0.25 : 1.0;
+
+        switch (driveState) {
+
+            case MANUAL: {
+                follower.setTeleOpDrive(
+                        -gamepad1.left_stick_y * driverScale,
+                        -gamepad1.left_stick_x * driverScale,
+                        -gamepad1.right_stick_x * driverScale,
+                        true
+                );
+                break;
+            }
+
+            case AUTO_TO_LB:
+            case AUTO_TO_RB: {
+                // While busy, follower owns outputs. When done, enter aim-lock.
+                if (!follower.isBusy()) {
+                    if (driveState == DriveState.AUTO_TO_LB) driveState = DriveState.AIM_LOCK_BLUE;
+                    else driveState = DriveState.AIM_LOCK_RED;
+
+                    follower.startTeleopDrive(); // hand back control but we will override rotation in aim-lock
+                }
+                break;
+            }
+
+            case AIM_LOCK_BLUE:
+            case AIM_LOCK_RED: {
+                Pose p = follower.getPose();
+                double goalX = (driveState == DriveState.AIM_LOCK_BLUE) ? BLUE_GOAL_X : RED_GOAL_X;
+                double goalY = (driveState == DriveState.AIM_LOCK_BLUE) ? BLUE_GOAL_Y : RED_GOAL_Y;
+
+                // Driver translation allowed
+                double forward = -gamepad1.left_stick_y * driverScale;
+                double strafe  = -gamepad1.left_stick_x * driverScale;
+
+                // Desired heading aims at goal from CURRENT pose (lets you micro-adjust position and stay aimed)
+                double desired = computeAimHeadingRad(p, goalX, goalY);
+
+                // Micro-adjust (trim) with right stick
+                double trim = gamepad1.right_stick_x * MICRO_ADJUST_GAIN;
+                desired = wrapAngle(desired + trim);
+
+                double error = wrapAngle(desired - p.getHeading());
+                double autoTurn = AIM_KP * error;
+                autoTurn = clamp(autoTurn, -AIM_MAX_TURN, AIM_MAX_TURN);
+
+                if (Math.abs(Math.toDegrees(error)) <= AIM_TOL_DEG && Math.abs(gamepad1.right_stick_x) < 0.05) {
+                    autoTurn = 0.0;
+                }
+
+                follower.setTeleOpDrive(forward, strafe, autoTurn, true);
+                break;
+            }
         }
     }
 
     // =========================================================
-    // ====================== DRIVE LOGIC ======================
+    // ============ BUILD PATH: GO TO (x,y) + AIM ===============
     // =========================================================
-    private void runDrive() {
-        // Keep your right-trigger slow
-        driverScale = (gamepad1.right_trigger > 0.05) ? 0.25 : 1.0;
+    private PathChain buildGoToShootAndAimPath(double targetX, double targetY, double goalX, double goalY) {
+        // Compute end heading at the target position that aims to the goal
+        double endHeading = computeAimHeadingAtXY(targetX, targetY, goalX, goalY);
+        Pose endPose = new Pose(targetX, targetY, endHeading);
 
-        // Driver translation always allowed
-        double forward = -gamepad1.left_stick_y * driverScale;
-        double strafe  = -gamepad1.left_stick_x * driverScale;
-
-        // Default rotation is driver-controlled
-        double rotCmd = -gamepad1.right_stick_x * driverScale;
-
-        if (driveState == DriveState.AIM_LOCK_BLUE || driveState == DriveState.AIM_LOCK_RED) {
-            Pose p = follower.getPose();
-
-            double goalX = (driveState == DriveState.AIM_LOCK_BLUE) ? BLUE_GOAL_X : RED_GOAL_X;
-            double goalY = (driveState == DriveState.AIM_LOCK_BLUE) ? BLUE_GOAL_Y : RED_GOAL_Y;
-
-            // Aim heading computed from CURRENT pose (so wherever you are, you point at the goal)
-            double desired = computeAimHeadingRad(p, goalX, goalY);
-
-            // Micro-adjust: right stick adds a small trim (does not “break” lock)
-            double trim = gamepad1.right_stick_x * MICRO_ADJUST_GAIN;
-            desired = wrapAngle(desired + trim);
-
-            double error = wrapAngle(desired - p.getHeading());
-            double autoTurn = AIM_KP * error;
-            autoTurn = clamp(autoTurn, -AIM_MAX_TURN, AIM_MAX_TURN);
-
-            // If basically on target AND driver isn't trimming, stop turning
-            if (Math.abs(Math.toDegrees(error)) <= AIM_TOL_DEG && Math.abs(gamepad1.right_stick_x) < 0.05) {
-                autoTurn = 0.0;
-            }
-
-            // Override rotation with aim-lock rotation
-            rotCmd = autoTurn;
-        }
-
-        // Robot-centric
-        follower.setTeleOpDrive(
-                forward,
-                strafe,
-                rotCmd,
-                true
-        );
+        return follower.pathBuilder()
+                .addPath(new Path(new BezierLine(follower::getPose, endPose)))
+                .setHeadingInterpolation(
+                        HeadingInterpolator.linearFromPoint(follower::getHeading, endHeading, 0.8)
+                )
+                .build();
     }
 
     // =========================================================
@@ -270,7 +371,6 @@ public class teleWithPedro extends OpMode {
         double robotY = robotPose.getY();
         double h = robotPose.getHeading();
 
-        // Shooter offset from robot frame -> world frame using current heading
         double dxRight = SHOOTER_OFFSET_RIGHT_IN;
         double dyForward = SHOOTER_OFFSET_FORWARD_IN;
 
@@ -294,6 +394,17 @@ public class teleWithPedro extends OpMode {
         return wrapAngle(Math.atan2(vy, vx));
     }
 
+    private double computeAimHeadingAtXY(double x, double y, double goalX, double goalY) {
+        // Start with center-aim guess
+        double heading = Math.atan2(goalY - y, goalX - x);
+
+        // Iterate to include shooter offset dependence on heading
+        for (int i = 0; i < 3; i++) {
+            heading = computeAimHeadingRad(new Pose(x, y, heading), goalX, goalY);
+        }
+        return wrapAngle(heading);
+    }
+
     private static double wrapAngle(double rad) {
         while (rad > Math.PI) rad -= 2.0 * Math.PI;
         while (rad < -Math.PI) rad += 2.0 * Math.PI;
@@ -302,6 +413,11 @@ public class teleWithPedro extends OpMode {
 
     private static double clamp(double v, double lo, double hi) {
         return Math.max(lo, Math.min(hi, v));
+    }
+
+    private static boolean isPoseValid(Pose p) {
+        if (p == null) return false;
+        return Double.isFinite(p.getX()) && Double.isFinite(p.getY()) && Double.isFinite(p.getHeading());
     }
 
     // ===================== FLYWHEEL =====================
@@ -344,7 +460,6 @@ public class teleWithPedro extends OpMode {
         flywheelController.turnFlywheelOn();
     }
 
-    // ===================== READY-TO-SHOOT RUMBLE LOGIC (gamepad2) =====================
     private void updateFlywheelReadyRumble() {
         double target = flywheelController.getTargetRPM();
 

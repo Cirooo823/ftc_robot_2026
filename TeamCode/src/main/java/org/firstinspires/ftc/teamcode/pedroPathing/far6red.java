@@ -11,6 +11,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import org.firstinspires.ftc.teamcode.pedroPathing.PoseStorage;
+
 
 
 @Autonomous(name = "far 6 red", group = "Autos")
@@ -315,6 +317,8 @@ public class far6red extends OpMode {
         // This runs the Driving Logic
         follower.update();
 
+        PoseStorage.lastPose = follower.getPose(); //ciro
+
         this.barrierOpen = shooter.isBarrierOpen();
 
         runIntake();
@@ -380,6 +384,7 @@ public class far6red extends OpMode {
     public void stop() {
         stopIntake();
         shooter.setFlywheelKeepAlive(false);
+        PoseStorage.lastPose = follower.getPose();
     }
 }
 
