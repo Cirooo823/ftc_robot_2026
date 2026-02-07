@@ -121,7 +121,7 @@ public class far6red extends OpMode {
         shoothpzone = follower.pathBuilder().addPath(
                         new BezierCurve(
                                 new Pose(135.000, 10.500),
-                                new Pose(101.000, 34.000),
+                                new Pose(95.000, 36.000),
                                 new Pose(85.000, 19.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(65))

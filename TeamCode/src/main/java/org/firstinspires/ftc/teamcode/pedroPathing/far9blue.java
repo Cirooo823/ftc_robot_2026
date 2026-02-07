@@ -54,7 +54,7 @@ public class far9blue extends OpMode {
 
                                 new Pose(58.5000, 19.50)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(116))
+                ).setLinearHeadingInterpolation(Math.toRadians(90), Math.toRadians(115))
 
                 .build();
 
@@ -64,7 +64,7 @@ public class far9blue extends OpMode {
 
                                 new Pose(40.000, 35.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(116), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(115), Math.toRadians(180))
 
                 .build();
 
@@ -92,7 +92,7 @@ public class far9blue extends OpMode {
                         new BezierLine(
                                 new Pose(58.50, 19.50),
 
-                                new Pose(8.000, 10.000)
+                                new Pose(7.500, 10.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(116), Math.toRadians(180))
 
@@ -100,7 +100,7 @@ public class far9blue extends OpMode {
 
         backup = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(8.000, 10.000),
+                                new Pose(7.500, 10.000),
 
                                 new Pose(20.000, 10.000)
                         )
@@ -112,7 +112,7 @@ public class far9blue extends OpMode {
                         new BezierLine(
                                 new Pose(20.000, 10.000),
 
-                                new Pose(8.000, 10.000)
+                                new Pose(7.500, 10.000)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(180))
 
@@ -120,7 +120,7 @@ public class far9blue extends OpMode {
 
         shoothpzone = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(8.000, 10.000),
+                                new Pose(7.500, 10.000),
                                 new Pose(50.000, 47.000),
                                 new Pose(58.50, 19.50)
                         )

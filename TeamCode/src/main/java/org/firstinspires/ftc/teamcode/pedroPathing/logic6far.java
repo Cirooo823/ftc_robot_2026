@@ -44,7 +44,7 @@ public class logic6far {
     private double flywheelvelocity = 0;
     private double MIN_FLYWHEEL_RPM = 2970;
     private double TARGET_FLYWHEEL_RPM = 2980;
-    private double FLYWHEEL_MAX_SPINUP_TIME = 2.7;
+    private double FLYWHEEL_MAX_SPINUP_TIME = 3.5;
 
     public void init(HardwareMap hwMap) {
         barrierServo = hwMap.get(Servo.class, "barrierServo");

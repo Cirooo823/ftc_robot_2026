@@ -96,7 +96,7 @@ public class close12blue extends OpMode {
                         new BezierCurve(
                                 new Pose(56.000, 87.000),
                                 new Pose(40.000, 62.000),
-                                new Pose(13.000, 62.600)
+                                new Pose(13.000, 62.30)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(134), Math.toRadians(160))
 
@@ -104,9 +104,9 @@ public class close12blue extends OpMode {
 
         intakegate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(13.000, 62.600),
+                                new Pose(13.000, 62.300),
 
-                                new Pose(11.75, 62.8)
+                                new Pose(11, 62.3)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(131))
 
@@ -114,7 +114,7 @@ public class close12blue extends OpMode {
 
         shootgate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(11.75, 62.8),
+                                new Pose(11, 62.3),
                                 new Pose(57.000, 50.000),
                                 new Pose(56.000, 87.000)
                         )
@@ -149,7 +149,7 @@ public class close12blue extends OpMode {
                                 new Pose(35.000, 66.000),
                                 new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(137))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(136))
 
                 .build();
 
@@ -159,7 +159,7 @@ public class close12blue extends OpMode {
 
                                 new Pose(33.000, 72.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(137), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
 
                 .build();
     }
@@ -233,16 +233,13 @@ public class close12blue extends OpMode {
 
             case 8: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
-                    follower.followPath(shootgate, true);
-                    setPathState(9);
-                }
-                else if (pathTimer.getElapsedTime() > 3000) {
-                    follower.followPath(shootgate, true);
-                    setPathState(9);
+                    if (pathTimer.getElapsedTime() > 3000) {
+                        follower.followPath(shootgate, true);
+                        setPathState(9);
+                    }
                 }
 
                 break;
-
 
 
             case 9: // Arrived at Shooting Spot -> FIRE
