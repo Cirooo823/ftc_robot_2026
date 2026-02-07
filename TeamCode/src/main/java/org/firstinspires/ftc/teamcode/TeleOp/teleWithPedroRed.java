@@ -11,7 +11,6 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.HeadingInterpolator;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 
@@ -29,32 +28,15 @@ public class teleWithPedroRed extends OpMode {
     // Fallback start pose if Auto didn't set PoseStorage.lastPose
     private static final Pose TELEOP_FALLBACK_START_POSE = new Pose(135, 9, 0);
 
-    // Goals (your provided coordinates)
-    private static final double BLUE_GOAL_X = 8.0;
-    private static final double BLUE_GOAL_Y = 136.0;
-    private static final double RED_GOAL_X  = 138.0;
-    private static final double RED_GOAL_Y  = 136.0;
-
     // ===================== PLACEHOLDERS YOU WILL FILL =====================
-    // LB1 target shooting position (X,Y). Heading is computed automatically to aim at BLUE goal.
+    // LB1 target position (X,Y).
     private static final double SHOOT_POS_LB_X = 84.0;
     private static final double SHOOT_POS_LB_Y = 12.0;
 
-    // RB1 target shooting position (X,Y). Heading computed to aim at RED goal.
+    // RB1 target position (X,Y).
     private static final double SHOOT_POS_RB_X = 60.0;
     private static final double SHOOT_POS_RB_Y = 12.0;
     // =======================================================
-
-    // Shooter offset relative to robot center (inches)
-    // Robot frame definition: +forward along heading, +right to robot’s right.
-    private static final double SHOOTER_OFFSET_RIGHT_IN   = 0.0;
-    private static final double SHOOTER_OFFSET_FORWARD_IN = -6.0;
-
-    // ======= TUNE ME: heading hold after arriving =======
-    private static final double AIM_TOL_DEG   = 1.5;
-    private static final double AIM_KP        = 1.5;
-    private static final double AIM_MAX_TURN  = 0.8;
-    private static final double MICRO_ADJUST_GAIN = 0.35;
 
     // Driver scaling (hold right trigger = slow)
     private double driverScale = 1.0;
@@ -64,16 +46,14 @@ public class teleWithPedroRed extends OpMode {
     private boolean prevRB1 = false;
 
     // Lazy path suppliers (rebuilt at press time so they start from CURRENT pose)
-    private Supplier<PathChain> toShootLB;
-    private Supplier<PathChain> toShootRB;
+    private Supplier<PathChain> toPosLB;
+    private Supplier<PathChain> toPosRB;
 
-    // Drive state machine
+    // Drive state machine (POSITION ONLY)
     private enum DriveState {
         MANUAL,
         AUTO_TO_LB,
-        AUTO_TO_RB,
-        AIM_LOCK_BLUE, // after arriving from LB path
-        AIM_LOCK_RED   // after arriving from RB path
+        AUTO_TO_RB
     }
     private DriveState driveState = DriveState.MANUAL;
 
@@ -112,7 +92,7 @@ public class teleWithPedroRed extends OpMode {
 
     // ===== FLYWHEEL PRESET RPMs =====
     private static final int PRESET_CLOSE = 3000;
-    private static final int PRESET_FAR   = 2850;
+    private static final int PRESET_FAR   = 2950;
 
     private static final int RPM_STEP = 50;
     private static final int MIN_RPM  = 500;
@@ -147,16 +127,9 @@ public class teleWithPedroRed extends OpMode {
         follower.setStartingPose(startPose);
         follower.update(); // prime
 
-        // Build suppliers lazily. NOTE: they compute headings at press time based on goal.
-        toShootLB = () -> buildGoToShootAndAimPath(
-                SHOOT_POS_LB_X, SHOOT_POS_LB_Y,
-                BLUE_GOAL_X, BLUE_GOAL_Y
-        );
-
-        toShootRB = () -> buildGoToShootAndAimPath(
-                SHOOT_POS_RB_X, SHOOT_POS_RB_Y,
-                RED_GOAL_X, RED_GOAL_Y
-        );
+        // Build suppliers lazily. IMPORTANT: no heading interpolation, no aiming.
+        toPosLB = () -> buildGoToPositionPath(SHOOT_POS_LB_X, SHOOT_POS_LB_Y);
+        toPosRB = () -> buildGoToPositionPath(SHOOT_POS_RB_X, SHOOT_POS_RB_Y);
 
         // ===================== MECHANISMS INIT =====================
         flywheel_Left  = hardwareMap.get(DcMotorEx.class, "flywheel_Left");
@@ -178,11 +151,11 @@ public class teleWithPedroRed extends OpMode {
         barrierServo.setPosition(BARRIER_CLOSED_POS);
         barrierOpen = false;
 
-        telemetry.addLine("teleWithPedro init complete (AUTO TO SHOOT POS: LB->posA aim BLUE, RB->posB aim RED).");
+        telemetry.addLine("teleWithPedro init complete (POSITION ONLY: LB->posA, RB->posB).");
         telemetry.addData("StartPoseSource", usedAutoStartPose ? "AUTO (PoseStorage)" : "FALLBACK");
         telemetry.addData("StartPose", teleopStartPoseUsed);
-        telemetry.addData("LB shoot pos", "(%.1f, %.1f)", SHOOT_POS_LB_X, SHOOT_POS_LB_Y);
-        telemetry.addData("RB shoot pos", "(%.1f, %.1f)", SHOOT_POS_RB_X, SHOOT_POS_RB_Y);
+        telemetry.addData("LB target", "(%.1f, %.1f)", SHOOT_POS_LB_X, SHOOT_POS_LB_Y);
+        telemetry.addData("RB target", "(%.1f, %.1f)", SHOOT_POS_RB_X, SHOOT_POS_RB_Y);
         telemetry.update();
     }
 
@@ -226,15 +199,6 @@ public class teleWithPedroRed extends OpMode {
         telemetry.addData("Barrier", barrierOpen ? "OPEN" : "CLOSED");
         telemetry.addData("Barrier Pos", "%.3f", barrierOpen ? BARRIER_OPEN_POS : BARRIER_CLOSED_POS);
 
-        if (driveState == DriveState.AIM_LOCK_BLUE || driveState == DriveState.AIM_LOCK_RED) {
-            double gx = (driveState == DriveState.AIM_LOCK_BLUE) ? BLUE_GOAL_X : RED_GOAL_X;
-            double gy = (driveState == DriveState.AIM_LOCK_BLUE) ? BLUE_GOAL_Y : RED_GOAL_Y;
-            double desired = computeAimHeadingRad(p, gx, gy);
-            double errDeg = Math.toDegrees(wrapAngle(desired - p.getHeading()));
-            telemetry.addData("AimTarget(deg)", "%.1f", Math.toDegrees(desired));
-            telemetry.addData("AimError(deg)", "%.1f", errDeg);
-        }
-
         telemetry.update();
     }
 
@@ -251,32 +215,26 @@ public class teleWithPedroRed extends OpMode {
         prevLB1 = lb;
         prevRB1 = rb;
 
-        // LB toggles "go to LB shoot position then aim BLUE"
+        // LB toggles "go to LB position"
         if (lbPressed) {
-            if (driveState == DriveState.AUTO_TO_LB || driveState == DriveState.AIM_LOCK_BLUE) {
-                cancelAutoToManual();
-            } else {
-                startAutoToLB();
-            }
+            if (driveState == DriveState.AUTO_TO_LB) cancelAutoToManual();
+            else startAutoToLB();
         }
 
-        // RB toggles "go to RB shoot position then aim RED"
+        // RB toggles "go to RB position"
         if (rbPressed) {
-            if (driveState == DriveState.AUTO_TO_RB || driveState == DriveState.AIM_LOCK_RED) {
-                cancelAutoToManual();
-            } else {
-                startAutoToRB();
-            }
+            if (driveState == DriveState.AUTO_TO_RB) cancelAutoToManual();
+            else startAutoToRB();
         }
     }
 
     private void startAutoToLB() {
-        follower.followPath(toShootLB.get());
+        follower.followPath(toPosLB.get());
         driveState = DriveState.AUTO_TO_LB;
     }
 
     private void startAutoToRB() {
-        follower.followPath(toShootRB.get());
+        follower.followPath(toPosRB.get());
         driveState = DriveState.AUTO_TO_RB;
     }
 
@@ -289,11 +247,9 @@ public class teleWithPedroRed extends OpMode {
     // =================== DRIVE STATE MACHINE =================
     // =========================================================
     private void runDriveStateMachine() {
-        // Your right-trigger slow
         driverScale = (gamepad1.right_trigger > 0.05) ? 0.25 : 1.0;
 
         switch (driveState) {
-
             case MANUAL: {
                 follower.setTeleOpDrive(
                         -gamepad1.left_stick_y * driverScale,
@@ -306,113 +262,29 @@ public class teleWithPedroRed extends OpMode {
 
             case AUTO_TO_LB:
             case AUTO_TO_RB: {
-                // While busy, follower owns outputs. When done, enter aim-lock.
+                // While busy, follower owns outputs. When done, return to MANUAL.
                 if (!follower.isBusy()) {
-                    if (driveState == DriveState.AUTO_TO_LB) driveState = DriveState.AIM_LOCK_BLUE;
-                    else driveState = DriveState.AIM_LOCK_RED;
-
-                    follower.startTeleopDrive(); // hand back control but we will override rotation in aim-lock
+                    follower.startTeleopDrive();
+                    driveState = DriveState.MANUAL;
                 }
-                break;
-            }
-
-            case AIM_LOCK_BLUE:
-            case AIM_LOCK_RED: {
-                Pose p = follower.getPose();
-                double goalX = (driveState == DriveState.AIM_LOCK_BLUE) ? BLUE_GOAL_X : RED_GOAL_X;
-                double goalY = (driveState == DriveState.AIM_LOCK_BLUE) ? BLUE_GOAL_Y : RED_GOAL_Y;
-
-                // Driver translation allowed
-                double forward = -gamepad1.left_stick_y * driverScale;
-                double strafe  = -gamepad1.left_stick_x * driverScale;
-
-                // Desired heading aims at goal from CURRENT pose (lets you micro-adjust position and stay aimed)
-                double desired = computeAimHeadingRad(p, goalX, goalY);
-
-                // Micro-adjust (trim) with right stick
-                double trim = gamepad1.right_stick_x * MICRO_ADJUST_GAIN;
-                desired = wrapAngle(desired + trim);
-
-                double error = wrapAngle(desired - p.getHeading());
-                double autoTurn = AIM_KP * error;
-                autoTurn = clamp(autoTurn, -AIM_MAX_TURN, AIM_MAX_TURN);
-
-                if (Math.abs(Math.toDegrees(error)) <= AIM_TOL_DEG && Math.abs(gamepad1.right_stick_x) < 0.05) {
-                    autoTurn = 0.0;
-                }
-
-                follower.setTeleOpDrive(forward, strafe, autoTurn, true);
                 break;
             }
         }
     }
 
     // =========================================================
-    // ============ BUILD PATH: GO TO (x,y) + AIM ===============
+    // ============ BUILD PATH: GO TO (x,y) ONLY ================
     // =========================================================
-    private PathChain buildGoToShootAndAimPath(double targetX, double targetY, double goalX, double goalY) {
-        // Compute end heading at the target position that aims to the goal
-        double endHeading = computeAimHeadingAtXY(targetX, targetY, goalX, goalY);
-        Pose endPose = new Pose(targetX, targetY, endHeading);
+    private PathChain buildGoToPositionPath(double targetX, double targetY) {
+        // IMPORTANT: we are NOT commanding a heading.
+        // Use the robot's current heading at the moment the path is created.
+        double currentHeading = follower.getPose().getHeading();
+        Pose endPose = new Pose(targetX, targetY, currentHeading);
 
         return follower.pathBuilder()
                 .addPath(new Path(new BezierLine(follower::getPose, endPose)))
-                .setHeadingInterpolation(
-                        HeadingInterpolator.linearFromPoint(follower::getHeading, endHeading, 0.8)
-                )
+                // NO setHeadingInterpolation(...)
                 .build();
-    }
-
-    // =========================================================
-    // ======================== AIM MATH =======================
-    // =========================================================
-    private double computeAimHeadingRad(Pose robotPose, double goalX, double goalY) {
-        double robotX = robotPose.getX();
-        double robotY = robotPose.getY();
-        double h = robotPose.getHeading();
-
-        double dxRight = SHOOTER_OFFSET_RIGHT_IN;
-        double dyForward = SHOOTER_OFFSET_FORWARD_IN;
-
-        double cosH = Math.cos(h);
-        double sinH = Math.sin(h);
-
-        // Forward component along heading
-        double worldDxFromForward = dyForward * cosH;
-        double worldDyFromForward = dyForward * sinH;
-
-        // Right component along (heading - 90deg) => (sinH, -cosH)
-        double worldDxFromRight = dxRight * sinH;
-        double worldDyFromRight = -dxRight * cosH;
-
-        double shooterX = robotX + worldDxFromForward + worldDxFromRight;
-        double shooterY = robotY + worldDyFromForward + worldDyFromRight;
-
-        double vx = goalX - shooterX;
-        double vy = goalY - shooterY;
-
-        return wrapAngle(Math.atan2(vy, vx));
-    }
-
-    private double computeAimHeadingAtXY(double x, double y, double goalX, double goalY) {
-        // Start with center-aim guess
-        double heading = Math.atan2(goalY - y, goalX - x);
-
-        // Iterate to include shooter offset dependence on heading
-        for (int i = 0; i < 3; i++) {
-            heading = computeAimHeadingRad(new Pose(x, y, heading), goalX, goalY);
-        }
-        return wrapAngle(heading);
-    }
-
-    private static double wrapAngle(double rad) {
-        while (rad > Math.PI) rad -= 2.0 * Math.PI;
-        while (rad < -Math.PI) rad += 2.0 * Math.PI;
-        return rad;
-    }
-
-    private static double clamp(double v, double lo, double hi) {
-        return Math.max(lo, Math.min(hi, v));
     }
 
     private static boolean isPoseValid(Pose p) {
