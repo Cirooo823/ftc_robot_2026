@@ -42,8 +42,8 @@ public class logic6far {
     //--------FLYWHEEL CONSTANTS-----------
     private int shotsRemaining = 0;
     private double flywheelvelocity = 0;
-    private double MIN_FLYWHEEL_RPM = 2970;
-    private double TARGET_FLYWHEEL_RPM = 2980;
+    private double MIN_FLYWHEEL_RPM = 2980;
+    private double TARGET_FLYWHEEL_RPM = 3000;
     private double FLYWHEEL_MAX_SPINUP_TIME = 3.5;
 
     public void init(HardwareMap hwMap) {

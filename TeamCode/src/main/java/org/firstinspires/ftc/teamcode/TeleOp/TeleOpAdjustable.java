@@ -21,7 +21,7 @@ public class TeleOpAdjustable extends OpMode {
     // ===== NEW BARRIER (SERVO) =====
     private Servo barrierServo;
 
-    private static final double BARRIER_CLOSED_POS = 0.6;
+    private static final double BARRIER_CLOSED_POS = 0.58;
     private static final double BARRIER_OPEN_POS   = 0;
 
     private boolean barrierOpen = false;
@@ -66,7 +66,7 @@ public class TeleOpAdjustable extends OpMode {
     private static final double INTAKE_RPM_BARRIER_CLOSED = 1150.0;
 
     private static final double INTAKE_RPM_BARRIER_FAR  = 250.0; // when target is PRESET_MED_LONG_RPM
-    private static final double INTAKE_RPM_BARRIER_CLOSE = 200;
+    private static final double INTAKE_RPM_BARRIER_CLOSE = 250.0;
 
     private static final double INTAKE_RPM_BARRIER_OPEN_DEFAULT = 250.0; // when target is PRESET_CLOSE
 

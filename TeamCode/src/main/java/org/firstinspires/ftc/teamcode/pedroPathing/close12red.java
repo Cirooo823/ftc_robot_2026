@@ -105,7 +105,7 @@ public class close12red extends OpMode {
                         new BezierLine(
                                 new Pose(131.00, 61.00),
 
-                                new Pose(134.0, 60.0) //was 34, 60
+                                new Pose(134.0, 61.0) //was 34, 60
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(30), Math.toRadians(35))
 
@@ -113,7 +113,7 @@ public class close12red extends OpMode {
 
         shootgate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(134.0, 60.0), //was 34, 60
+                                new Pose(134.0, 61.0), //was 34, 60
                                 new Pose(92.000, 59.000),
                                 new Pose(89.000, 88.000)
                         )
@@ -237,10 +237,11 @@ public class close12red extends OpMode {
 
             case 8: // Arrived at Pickup -> Drive to Shoot
                 if (!follower.isBusy()) {
-                    if (pathTimer.getElapsedTime() > 3000) {
                         follower.followPath(shootgate, true);
                         setPathState(9);
-                    }
+                    } else if (pathTimer.getElapsedTime() > 3000) {
+                    follower.followPath(shootgate, true);
+                    setPathState(9);
                 }
 
                 break;

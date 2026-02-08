@@ -58,7 +58,7 @@ public class close12blue extends OpMode {
                                 new Pose(57.5, 119),
                                 new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(134))
+                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(136))
 
                 .build();
 
@@ -66,17 +66,17 @@ public class close12blue extends OpMode {
                         new BezierLine(
                                 new Pose(56.000, 87.000),
 
-                                new Pose(45.000, 61.000)
+                                new Pose(45.000, 60.500)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(134), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
 
                 .build();
 
         intakemiddle = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(45.000, 61.000),
+                                new Pose(45.000, 60.500),
 
-                                new Pose(13.000, 61.000)
+                                new Pose(13.000, 60.500)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -84,11 +84,11 @@ public class close12blue extends OpMode {
 
         shootmiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(13.000, 61.000),
+                                new Pose(13.000, 60.500),
                                 new Pose(61.000, 51.500),
                                 new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(134))
+                ).setLinearHeadingInterpolation(Math.toRadians(180), Math.toRadians(136))
 
                 .build();
 
@@ -96,17 +96,17 @@ public class close12blue extends OpMode {
                         new BezierCurve(
                                 new Pose(56.000, 87.000),
                                 new Pose(40.000, 62.000),
-                                new Pose(13.000, 62.30)
+                                new Pose(13.000, 62.0)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(134), Math.toRadians(160))
+                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(160))
 
                 .build();
 
         intakegate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(13.000, 62.300),
+                                new Pose(13.000, 62.00),
 
-                                new Pose(11, 62.3)
+                                new Pose(11, 62)
                         )
                 ).setLinearHeadingInterpolation(Math.toRadians(160), Math.toRadians(131))
 
@@ -114,11 +114,11 @@ public class close12blue extends OpMode {
 
         shootgate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(11, 62.3),
+                                new Pose(11, 62),
                                 new Pose(57.000, 50.000),
                                 new Pose(56.000, 87.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(131), Math.toRadians(135))
+                ).setLinearHeadingInterpolation(Math.toRadians(131), Math.toRadians(136))
 
                 .build();
 
@@ -129,7 +129,7 @@ public class close12blue extends OpMode {
 
                                 new Pose(43.000, 85.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(135), Math.toRadians(180))
+                ).setLinearHeadingInterpolation(Math.toRadians(136), Math.toRadians(180))
 
                 .build();
 
@@ -167,6 +167,10 @@ public class close12blue extends OpMode {
 
     // --- 2. THE CORRECTED STATE MACHINE ---
     public void autonomousPathUpdate() {
+        if (opmodeTimer.getElapsedTimeSeconds() > 29 && !safetyTriggered) { //if 28.5 seconds pass, so the auto doesnt just randomly stay there lol
+            setPathState(99);
+            safetyTriggered = true;
+        }
         switch (pathState) {
                 case 0: // Drive to Shoot Preload
                     follower.followPath(shootpreload);
@@ -236,6 +240,9 @@ public class close12blue extends OpMode {
                     if (pathTimer.getElapsedTime() > 3000) {
                         follower.followPath(shootgate, true);
                         setPathState(9);
+                    } else if (pathTimer.getElapsedTime() > 5000) {
+                        follower.followPath(shootgate, true);
+                        setPathState(9);
                     }
                 }
 
@@ -294,6 +301,15 @@ public class close12blue extends OpMode {
                     shooter.setFlywheelKeepAlive(false);
                     setPathState(-1);
                 }
+                break;
+
+            case 99: // SAFETY
+                shooter.setFlywheelKeepAlive(false); //turn off shooter
+                intakeOn = false; //turn off intake
+
+                follower.followPath(facegate, true);
+
+                setPathState(-1); // End the state machine
                 break;
 
 

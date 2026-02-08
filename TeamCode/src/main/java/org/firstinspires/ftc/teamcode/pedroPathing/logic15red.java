@@ -42,8 +42,8 @@ public class logic15red {
     //--------FLYWHEEL CONSTANTS-----------
     private int shotsRemaining = 0;
     private double flywheelvelocity = 0;
-    private double MIN_FLYWHEEL_RPM = 3100;
-    private double TARGET_FLYWHEEL_RPM = 3130;
+    private double MIN_FLYWHEEL_RPM = 2480;
+    private double TARGET_FLYWHEEL_RPM = 2500;
     private double FLYWHEEL_MAX_SPINUP_TIME = 1.4;
 
     public void init(HardwareMap hwMap) {
