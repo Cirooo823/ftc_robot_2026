@@ -52,7 +52,7 @@ public class Constants {
             .leftFrontMotorName("leftFront")
             .leftFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .leftRearMotorDirection(DcMotorSimple.Direction.FORWARD) //was reversed
-            .rightFrontMotorDirection(DcMotorSimple.Direction.FORWARD)
+            .rightFrontMotorDirection(DcMotorSimple.Direction.REVERSE)
             .rightRearMotorDirection(DcMotorSimple.Direction.FORWARD);
 
 
