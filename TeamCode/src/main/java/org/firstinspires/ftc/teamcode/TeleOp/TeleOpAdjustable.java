@@ -115,7 +115,7 @@ public class TeleOpAdjustable extends OpMode {
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         // If intake spins the wrong direction vs your old setPower(1.0), uncomment ONE of these:
-        // intake.setDirection(DcMotorSimple.Direction.REVERSE);
+         intake.setDirection(DcMotorSimple.Direction.REVERSE);
         // intake.setDirection(DcMotorSimple.Direction.FORWARD);
 
         // ===== NEW BARRIER SERVO INIT =====
