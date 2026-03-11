@@ -83,7 +83,7 @@ public class TeleOpAdjustable extends OpMode {
 
         left_f.setDirection(DcMotor.Direction.REVERSE);
         left_b.setDirection(DcMotor.Direction.FORWARD);
-        right_f.setDirection(DcMotor.Direction.FORWARD);
+        right_f.setDirection(DcMotor.Direction.REVERSE);
         right_b.setDirection(DcMotor.Direction.FORWARD);
 
         right_f.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
