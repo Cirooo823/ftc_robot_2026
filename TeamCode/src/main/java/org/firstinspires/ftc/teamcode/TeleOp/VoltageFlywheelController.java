@@ -26,12 +26,12 @@ public class VoltageFlywheelController {
     private static final double TICKS_PER_REVOLUTION = 28.0;
 
     // --- PIDF COEFFICIENTS ---
-    public static double kF = 0.000385; //og 0.000385
-    public static double kP = 0.00005; //og 0.00005
+    public static double kF = 0.000180; //og 0.000385 //360
+    public static double kP = 0.000120; //og 0.000050  //35
     public static double kI = 0.0;
-    public static double kD = 0.0;
+    public static double kD = 0.000150;
 
-    // --- STATE (per motor) ---
+    // --- STATE (per motor) ---hh
     private double lastErrorL = 0.0, integralL = 0.0;
     private double lastErrorR = 0.0, integralR = 0.0;
 
@@ -99,9 +99,11 @@ public class VoltageFlywheelController {
         double targetTPS = (targetRPM / 60.0) * TICKS_PER_REVOLUTION;
 
         if (flywheelOn && targetRPM > 0.0) {
-            lastPowerL = calculatePIDF(flywheel_Left,  targetTPS, dt, true);
-            lastPowerR = calculatePIDF(flywheel_Right, targetTPS, dt, false);
-            setFlywheelPower(lastPowerL, lastPowerR);
+            double masterPower = calculatePIDF(flywheel_Left,targetTPS,dt, true);
+
+            lastPowerL = masterPower;
+            lastPowerR = masterPower;
+            setFlywheelPower(masterPower,masterPower);
         } else {
             lastPowerL = 0.0;
             lastPowerR = 0.0;
