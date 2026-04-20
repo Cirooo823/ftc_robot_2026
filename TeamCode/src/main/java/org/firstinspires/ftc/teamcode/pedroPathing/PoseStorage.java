@@ -7,6 +7,9 @@ import com.pedropathing.geometry.Pose;
  * Works as long as the RC app is not restarted between OpModes.
  */
 public final class PoseStorage {
+    public static double goalX;
+    public static double goalY;
+
     private PoseStorage() {}
 
     // If your code never assigns this, TeleOp will fall back to TELEOP_START_POSE

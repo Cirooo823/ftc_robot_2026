@@ -6,12 +6,13 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
+import org.firstinspires.ftc.teamcode.TeleOp.NonEnslavedVoltageFlywheelController;
 import org.firstinspires.ftc.teamcode.TeleOp.VoltageFlywheelController;
 
 public class logic15red {
     public boolean isBarrierOpen() {
         // Check if the servo is currently at the open position
-        return Math.abs(barrierServo.getPosition() - BARRIER_OPEN_POS) < 0.1;
+        return Math.abs(barrierServo.getPosition() - BARRIER_OPEN_POS) < 0.2;
     }
     private boolean keepFlywheelRunning = false; //NEW
     private DcMotorEx flywheel_Left, flywheel_Right;
@@ -19,9 +20,9 @@ public class logic15red {
     private Servo barrierServo;
     private final double BARRIER_CLOSED_POS = 0.67;
     private final double BARRIER_OPEN_POS   = 0.0;
-    private double BARRIER_RELEASE_TIME = 1.5; //time for shots before gate closes again
+    private double BARRIER_RELEASE_TIME = 2.0; //time for shots before gate closes again
     private double BARRIER_RESET_TIME = 0.1; //time it takes t close gate
-    private VoltageFlywheelController flywheelController;
+    private NonEnslavedVoltageFlywheelController flywheelController;
     private ElapsedTime stateTimer = new ElapsedTime();
     private enum FlywheelState {
 
@@ -42,13 +43,13 @@ public class logic15red {
     //--------FLYWHEEL CONSTANTS-----------
     private int shotsRemaining = 0;
     private double flywheelvelocity = 0;
-    private double MIN_FLYWHEEL_RPM = 2480;
-    private double TARGET_FLYWHEEL_RPM = 2500;
+    private double MIN_FLYWHEEL_RPM = 2450;
+    private double TARGET_FLYWHEEL_RPM = 2450;
     private double FLYWHEEL_MAX_SPINUP_TIME = 1.4;
 
     public void init(HardwareMap hwMap) {
         barrierServo = hwMap.get(Servo.class, "barrierServo");
-        flywheelController = new VoltageFlywheelController(hwMap);
+        flywheelController = new NonEnslavedVoltageFlywheelController(hwMap);
 
         // flywheel_Left = hwMap.get(DcMotorEx.class, "flywheel_Left");
         //flywheel_Right = hwMap.get(DcMotorEx.class, "flywheel_Right");

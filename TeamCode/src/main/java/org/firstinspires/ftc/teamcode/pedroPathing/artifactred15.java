@@ -14,7 +14,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 
-@Disabled
+
 @Autonomous(name = "15 red", group = "Autos")
 public class artifactred15 extends OpMode {
 

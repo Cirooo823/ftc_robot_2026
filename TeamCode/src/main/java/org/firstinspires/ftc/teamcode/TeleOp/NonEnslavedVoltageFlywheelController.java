@@ -8,7 +8,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
-public class VoltageFlywheelController {
+public class NonEnslavedVoltageFlywheelController {
 
     // --- HARDWARE ---
     private final DcMotorEx flywheel_Left;
@@ -26,12 +26,12 @@ public class VoltageFlywheelController {
     private static final double TICKS_PER_REVOLUTION = 28.0;
 
     // --- PIDF COEFFICIENTS ---
-    public static double kF = 0.000460; //og 0.000385 //360
-    public static double kP = 0.000120; //og 0.000050  //35
+    public static double kF = 0.000445; //og 0.000385
+    public static double kP = 0.00139000; //og 0.00005
     public static double kI = 0.0;
     public static double kD = 0.0;
 
-    // --- STATE (per motor) ---hh
+    // --- STATE (per motor) ---
     private double lastErrorL = 0.0, integralL = 0.0;
     private double lastErrorR = 0.0, integralR = 0.0;
 
@@ -46,7 +46,7 @@ public class VoltageFlywheelController {
     private double lastPowerL = 0.0;
     private double lastPowerR = 0.0;
 
-    public VoltageFlywheelController(HardwareMap hardwareMap) {
+    public NonEnslavedVoltageFlywheelController(HardwareMap hardwareMap) {
         flywheel_Left  = hardwareMap.get(DcMotorEx.class, "flywheel_Left");
         flywheel_Right = hardwareMap.get(DcMotorEx.class, "flywheel_Right");
 
@@ -63,6 +63,12 @@ public class VoltageFlywheelController {
 
         loopTimer.reset();
         lastLoopTimeSec = loopTimer.seconds();
+    }
+
+    public NonEnslavedVoltageFlywheelController(DcMotorEx flywheelLeft, DcMotorEx flywheelRight, VoltageSensor batteryVoltageSensor) {
+        flywheel_Left = flywheelLeft;
+        flywheel_Right = flywheelRight;
+        this.batteryVoltageSensor = batteryVoltageSensor;
     }
 
     public void setFlywheelTargetRPM(double rpm) {
@@ -99,11 +105,9 @@ public class VoltageFlywheelController {
         double targetTPS = (targetRPM / 60.0) * TICKS_PER_REVOLUTION;
 
         if (flywheelOn && targetRPM > 0.0) {
-            double masterPower = calculatePIDF(flywheel_Left,targetTPS,dt, true);
-
-            lastPowerL = masterPower;
-            lastPowerR = masterPower;
-            setFlywheelPower(masterPower,masterPower);
+            lastPowerL = calculatePIDF(flywheel_Left,  targetTPS, dt, true);
+            lastPowerR = calculatePIDF(flywheel_Right, targetTPS, dt, false);
+            setFlywheelPower(lastPowerL, lastPowerR);
         } else {
             lastPowerL = 0.0;
             lastPowerR = 0.0;
@@ -206,7 +210,7 @@ public class VoltageFlywheelController {
 
     public double getBatteryVoltage() {
         return (batteryVoltageSensor != null) ? batteryVoltageSensor.getVoltage() : 0.0;
-    }
+}
 
     public double getCurrentRPM_Average() {
         double velL = -flywheel_Left.getVelocity();

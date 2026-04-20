@@ -10,7 +10,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 @TeleOp(name="TeleOp with Adjustable RPM", group="TeleOp")
 public class TeleOpAdjustable extends OpMode {
 
-    private VoltageFlywheelController flywheelController;
+    private NonEnslavedVoltageFlywheelController flywheelController;
 
     private DcMotorEx right_b, left_f, right_f, left_b;
 
@@ -45,10 +45,12 @@ public class TeleOpAdjustable extends OpMode {
     private boolean prevLT2 = false;
     private boolean prevRT2 = false;
     private boolean prevLSB2 = false;
+    private boolean prevlb2 = false;
+    private boolean prevrb2 = false;
 
     // ===== PRESET RPMs =====
-    private static final int PRESET_CLOSE = 3000; // gamepad2 left trigger
-    private static final int PRESET_FAR = 2500; // gamepad2 right trigger
+    private static final int PRESET_CLOSE = 2500; // gamepad2 left trigger
+    private static final int PRESET_FAR = 3050; // gamepad2 right trigger
 
     // Fine adjust step and minimum
     private static final int RPM_STEP = 50;
@@ -108,14 +110,14 @@ public class TeleOpAdjustable extends OpMode {
         flywheel_Right.setDirection(DcMotorSimple.Direction.FORWARD);
 
         // Use the voltage-compensated controller
-        flywheelController = new VoltageFlywheelController(hardwareMap);
+        flywheelController = new NonEnslavedVoltageFlywheelController(hardwareMap);
 
         // intake uses encoder for velocity control
-        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         // If intake spins the wrong direction vs your old setPower(1.0), uncomment ONE of these:
-         intake.setDirection(DcMotorSimple.Direction.REVERSE);
+         intake.setDirection(DcMotorSimple.Direction.FORWARD);
         // intake.setDirection(DcMotorSimple.Direction.FORWARD);
 
         // ===== NEW BARRIER SERVO INIT =====
@@ -186,11 +188,11 @@ public class TeleOpAdjustable extends OpMode {
         boolean rt2  = rtVal > 0.5;
 
 
-        if (lt2 && !prevLT2) setFlywheelPreset(PRESET_CLOSE);
-        prevLT2 = lt2;
+        if (lb2 && !prevlb2) setFlywheelPreset(PRESET_CLOSE);
+        prevlb2 = lb2;
 
-        if (rt2 && !prevRT2) setFlywheelPreset(PRESET_FAR);
-        prevRT2 = rt2;
+        if (rb2 && !prevrb2) setFlywheelPreset(PRESET_FAR);
+        prevrb2 = rb2;
 
         if (lsb2 && !prevLSB2) flywheelController.turnFlywheelOff();
         prevLSB2 = lsb2;
@@ -265,11 +267,22 @@ public class TeleOpAdjustable extends OpMode {
     }
 
     // ===================== INTAKE (VELOCITY CONTROL) =====================
+
+
     private void runIntake() {
         // g1 intake on/off toggle
-        boolean x = gamepad1.x;
-        if (x && !prevX) intakeOn = !intakeOn;
-        prevX = x;
+//        boolean x = gamepad1.x;
+//        if (x && !prevX) intakeOn = !intakeOn;
+//        prevX = x;
+
+        // left trigger controls intake (hold = on, release = off)
+        double trigger = gamepad1.left_trigger;
+
+        if (trigger > 0.1) {
+            intakeOn = true;
+        } else {
+            intakeOn = false;
+        }
 
         // NEW: g1 right stick button toggles fixed 250 RPM preset
         boolean rsb1 = gamepad1.right_stick_button;

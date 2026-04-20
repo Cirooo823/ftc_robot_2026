@@ -11,6 +11,10 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+
+import org.firstinspires.ftc.teamcode.TeleOp.NonEnslavedVoltageFlywheelController;
+import org.firstinspires.ftc.teamcode.Testing.flywheel;
 import org.firstinspires.ftc.teamcode.pedroPathing.PoseStorage;
 
 
@@ -39,12 +43,12 @@ public class close12red extends OpMode {
 
 
     // --- POSES (Untouched) ---
-    private final Pose startPose = new Pose(117.5, 130, Math.toRadians(44));
+    private final Pose startPose = new Pose(117.5, 130, Math.toRadians(37));
 
 
     private PathChain shootpreload;
     private PathChain facemiddle, intakemiddle, shootmiddle;
-    private PathChain opengate, intakegate, shootgate;
+    private PathChain  opengate, intakegate, shootgate;
     private PathChain faceclose, intakeclose, shootclose;
     private PathChain facegate;
 
@@ -55,27 +59,27 @@ public class close12red extends OpMode {
                         new BezierCurve(
                                 new Pose(117.500, 130.000),
                                 new Pose(89.000, 118.000),
-                                new Pose(89.000, 88.000)
+                                new Pose(92, 92)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(44), Math.toRadians(48))
+                ).setLinearHeadingInterpolation(Math.toRadians(37), Math.toRadians(46))
 
                 .build();
 
         facemiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(89.000, 88.000),
+                                new Pose(92, 92),
                                 new Pose(84.000, 71.000),
-                                new Pose(102.000, 58.000)
+                                new Pose(102.000, 59.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(48), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(46), Math.toRadians(0))
 
                 .build();
 
         intakemiddle = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(101.000, 59.000),
+                                new Pose(102.000, 59.000),
 
-                                new Pose(130.000, 59.000)
+                                new Pose(127.000, 59.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -83,52 +87,53 @@ public class close12red extends OpMode {
 
         shootmiddle = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(130.000, 59.000),
+                                new Pose(127.000, 59.000),
                                 new Pose(92.000, 41.000),
-                                new Pose(89.000, 88.000)
+                                new Pose(92, 92)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(48))
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(44))
 
                 .build();
 
         opengate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(89.000, 88.000),
+                                new Pose(92, 92),
                                 new Pose(88.000, 60.000),
-                                new Pose(131.00, 61.00)
+                                new Pose(135.00, 58.00)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(48), Math.toRadians(30))
+                ).setLinearHeadingInterpolation(Math.toRadians(44), Math.toRadians(21))
 
                 .build();
 
+
         intakegate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(131.00, 61.00),
+                                new Pose(135.00, 58.00),
 
-                                new Pose(134.0, 61.0) //was 34, 60
+                                new Pose(135.0, 58.0) //was 34, 60
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(30), Math.toRadians(35))
+                ).setLinearHeadingInterpolation(Math.toRadians(21), Math.toRadians(21))
 
                 .build();
 
         shootgate = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(134.0, 61.0), //was 34, 60
-                                new Pose(92.000, 59.000),
-                                new Pose(89.000, 88.000)
+                                new Pose(135.0, 60.0), //was 34, 60\
+                                new Pose(92.000, 60.000),
+                                new Pose(92, 92)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(35), Math.toRadians(48))
+                ).setLinearHeadingInterpolation(Math.toRadians(21), Math.toRadians(46))
 
                 .build();
 
 
         faceclose = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(89.000, 88.000),
+                                new Pose(92, 92),
 
                                 new Pose(100.000, 85.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(48), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(46), Math.toRadians(0))
 
                 .build();
 
@@ -136,7 +141,7 @@ public class close12red extends OpMode {
                         new BezierLine(
                                 new Pose(100.000, 85.000),
 
-                                new Pose(128.500, 85.000)
+                                new Pose(123.500, 85.000)
                         )
                 ).setTangentHeadingInterpolation()
 
@@ -144,21 +149,21 @@ public class close12red extends OpMode {
 
         shootclose = follower.pathBuilder().addPath(
                         new BezierCurve(
-                                new Pose(128.500, 85.000),
+                                new Pose(126.500, 85.000),
                                 new Pose(93.000, 65.000),
-                                new Pose(89.000, 88.000)
+                                new Pose(92, 92)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(48))
+                ).setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(44))
 
                 .build();
 
         facegate = follower.pathBuilder().addPath(
                         new BezierLine(
-                                new Pose(89.000, 88.000),
+                                new Pose(92, 92),
 
-                                new Pose(115.000, 72.000)
+                                new Pose(100.000, 72.000)
                         )
-                ).setLinearHeadingInterpolation(Math.toRadians(48), Math.toRadians(0))
+                ).setLinearHeadingInterpolation(Math.toRadians(44), Math.toRadians(0))
 
                 .build();
     }
@@ -166,7 +171,7 @@ public class close12red extends OpMode {
 
     // --- 2. THE CORRECTED STATE MACHINE ---
     public void autonomousPathUpdate() {
-        if (opmodeTimer.getElapsedTimeSeconds() > 29 && !safetyTriggered) { //if 28.5 seconds pass, so the auto doesnt just randomly stay there lol
+        if (opmodeTimer.getElapsedTimeSeconds() > 29.5 && !safetyTriggered) { //if 28.5 seconds pass, so the auto doesnt just randomly stay there lol
             setPathState(99);
             safetyTriggered = true;
         }
@@ -236,12 +241,9 @@ public class close12red extends OpMode {
 
 
             case 8: // Arrived at Pickup -> Drive to Shoot
-                if (!follower.isBusy()) {
+                if (pathTimer.getElapsedTime() > 2800) {
                         follower.followPath(shootgate, true);
                         setPathState(9);
-                    } else if (pathTimer.getElapsedTime() > 3000) {
-                    follower.followPath(shootgate, true);
-                    setPathState(9);
                 }
 
                 break;
@@ -339,6 +341,7 @@ public class close12red extends OpMode {
 
         intake = hardwareMap.get(DcMotorEx.class, "intake");
         //intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake.setDirection(DcMotorSimple.Direction.FORWARD);
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intake.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -373,6 +376,8 @@ public class close12red extends OpMode {
         follower.update();
 
         PoseStorage.lastPose = follower.getPose(); //ciro
+        PoseStorage.goalX = 72.0; // CHANGE THIS after your push-test
+        PoseStorage.goalY = 24.0; // CHANGE THIS after your push-test
 
         this.barrierOpen = shooter.isBarrierOpen();
 
@@ -383,10 +388,19 @@ public class close12red extends OpMode {
 
 
         // Telemetry
-        telemetry.addData("Path State", pathState);
-        telemetry.addData("Shooter Busy?", shooter.isBusy());
+        // --- CALCULATE DISTANCE TO GOAL ---
+        double dx = PoseStorage.goalX - follower.getPose().getX();
+        double dy = PoseStorage.goalY - follower.getPose().getY();
+// Pythagorean Theorem: distance = sqrt(a^2 + b^2)
+        double distanceToGoal = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
+
+// Telemetry
+        telemetry.addData("--- LIVE PUSH TEST ---", "");
+        telemetry.addData("DIST TO GOAL", "%.2f inches", distanceToGoal); // USE THIS FOR D1 & D2
         telemetry.addData("X", follower.getPose().getX());
         telemetry.addData("Y", follower.getPose().getY());
+        telemetry.addData("Path State", pathState);
+        telemetry.addData("Shooter Busy?", shooter.isBusy());
         telemetry.update();
     }
 
